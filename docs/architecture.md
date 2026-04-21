@@ -92,9 +92,14 @@ Valid transitions:
 - DRAFT → SUBMITTED (user submits)
 - SUBMITTED → APPROVED (admin approves)
 - SUBMITTED → REJECTED (admin rejects)
-- REJECTED → DRAFT (user explicitly reopens via "Reopen to Draft" action)
-- DRAFT → DRAFT (user edits items)
+- REJECTED → DRAFT (user explicitly reopens — required before re-submit)
 - Delete only allowed from DRAFT
+
+Edit guards:
+- Items editable in DRAFT and REJECTED (user regains edit rights on rejection per spec)
+- Report metadata editable in DRAFT and REJECTED
+- Submit only from DRAFT (must have ≥1 item)
+- Re-submit requires REOPEN first (REJECTED → DRAFT → SUBMITTED)
 
 ## API Endpoints
 
@@ -119,6 +124,29 @@ Valid transitions:
 
 ### Receipts
 - `POST   /api/reports/:reportId/items/:id/receipt` — upload receipt, returns extracted data
+
+### Receipt Upload & AI Extraction Flow
+
+```
+Client                          Backend                         OpenAI
+  │                                │                              │
+  │──POST /items/:id/receipt──────►│                              │
+  │  (multipart: file)            │                              │
+  │                               │──save to uploads/──────────►│
+  │                               │──send image/PDF─────────────►│
+  │                               │◄──extracted JSON────────────│
+  │                               │──update item.receiptUrl─────►│
+  │◄──{ item, extracted }────────│                              │
+  │                               │                              │
+  │  (user reviews, edits, saves) │                              │
+  │──PUT /items/:id──────────────►│                              │
+  │  (final values)               │                              │
+```
+
+- **Synchronous extraction**: upload blocks until LLM responds (2-5s typical). Frontend shows loading spinner.
+- **File storage**: local filesystem at `backend/uploads/`. `receiptUrl` stores the relative path.
+- **Mockable**: `OPENAI_API_KEY=dummy` falls back to a mock extractor returning static data.
+- **Accepted formats**: PDF, PNG, JPG, WEBP (max 10MB via multer config).
 
 ### Admin
 - `GET    /api/admin/reports` — list all reports, `?status=` filter, `?userId=` filter
@@ -167,3 +195,21 @@ React SPA with React Router v6
 State management: React Context for auth, local state + fetch hooks for data.
 No Redux/Zustand — scope doesn't justify it.
 ```
+
+## Testing Strategy
+
+### Unit Tests
+
+- **State machine**: all valid/invalid transitions, `canEditItems`, `canEditMetadata`, `canDelete` guard functions. Located in `backend/tests/unit/report-state-machine.test.ts`.
+- Tests use `StateTransitionError` and `ValidationError` assertions (not generic `Error`) to verify proper HTTP status code mapping.
+
+### Integration Tests (Phase 6)
+
+Integration tests hit running API endpoints with a real database:
+
+1. **DRAFT → SUBMITTED → APPROVED**: create report, add item, submit, admin approve.
+2. **DRAFT → SUBMITTED → REJECTED → DRAFT → SUBMITTED**: full rejection-reopen-resubmit cycle.
+3. **Item CRUD locked in SUBMITTED**: assert 400 on create/update/delete items when report is SUBMITTED.
+4. **Auth**: unauthenticated requests return 401; non-admin on admin routes returns 403.
+
+Tests use Jest + Supertest against the Express app with a test database. Setup/teardown scripts seed and clean the database per test suite.
