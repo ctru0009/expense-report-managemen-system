@@ -118,8 +118,8 @@ describe('ReportStateMachine', () => {
       expect(canEditItems('APPROVED')).toBe(false);
     });
 
-    it('returns false for REJECTED', () => {
-      expect(canEditItems('REJECTED')).toBe(false);
+    it('returns true for REJECTED', () => {
+      expect(canEditItems('REJECTED')).toBe(true);
     });
   });
 
@@ -136,8 +136,8 @@ describe('ReportStateMachine', () => {
       expect(canEditMetadata('APPROVED')).toBe(false);
     });
 
-    it('returns false for REJECTED', () => {
-      expect(canEditMetadata('REJECTED')).toBe(false);
+    it('returns true for REJECTED', () => {
+      expect(canEditMetadata('REJECTED')).toBe(true);
     });
   });
 
