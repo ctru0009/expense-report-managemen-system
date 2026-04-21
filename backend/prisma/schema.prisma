@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum ReportStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+enum Category {
+  TRAVEL
+  MEALS
+  OFFICE_SUPPLIES
+  SOFTWARE
+  HARDWARE
+  MARKETING
+  OTHER
+}
+
+model User {
+  id        String         @id @default(uuid()) @db.Uuid
+  email     String         @unique
+  password  String
+  role      Role           @default(USER)
+  reports   ExpenseReport[]
+  createdAt DateTime       @default(now())
+
+  @@map("users")
+}
+
+model ExpenseReport {
+  id          String         @id @default(uuid()) @db.Uuid
+  userId      String         @db.Uuid
+  title       String
+  description String?
+  status      ReportStatus   @default(DRAFT)
+  totalAmount Decimal        @default(0) @db.Decimal(12, 2)
+  user        User           @relation(fields: [userId], references: [id])
+  items       ExpenseItem[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@map("expense_reports")
+}
+
+model ExpenseItem {
+  id             String     @id @default(uuid()) @db.Uuid
+  reportId       String     @db.Uuid
+  amount         Decimal    @db.Decimal(12, 2)
+  currency       String     @default("USD") @db.Char(3)
+  category       Category
+  merchantName   String
+  transactionDate DateTime
+  receiptUrl     String?
+  report         ExpenseReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  @@map("expense_items")
+}
