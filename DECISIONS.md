@@ -16,13 +16,21 @@
 
 ## Key Design Decisions
 
-### 1. REJECTED → DRAFT via Explicit Reopen Action
+### 1. REJECTED → DRAFT via Explicit Reopen, Edit Rights in REJECTED
 
-When an admin rejects a report, the user must click **"Reopen to Draft"** before they can edit items. The transition REJECTED → DRAFT is a deliberate user action, not implicit on first edit.
+When an admin rejects a report, two things happen simultaneously:
+1. The user **regains edit rights** immediately — they can add/edit/delete items and update report metadata without any extra step.
+2. To **re-submit** the report, the user must click "Reopen to Draft" first, which transitions REJECTED → DRAFT, and then submit again.
 
-**Why:** The spec diagram shows REJECTED → DRAFT as a distinct arrow, implying a deliberate action. Making it explicit means the user acknowledges the rejection and consciously decides to rework the report. An implicit flip (editing an item auto-transitions to DRAFT) risks accidental state changes — a user browsing a rejected report shouldn't silently change its status.
+**Why:** The assessment spec states: *"REJECTED — set by admin. User regains edit rights and can re-submit."* Allowing immediate edit access in REJECTED matches the spec's intent — the user shouldn't be blocked from fixing their report. However, re-submission requires a deliberate reopen action so the user consciously acknowledges the rejection before sending it back for review.
 
-**Trade-off:** This adds one extra endpoint (`POST /api/reports/:id/reopen`) and one extra button in the UI. Worth it for clarity.
+This is implemented via:
+- `canEditItems(status)`: returns `true` for DRAFT and REJECTED
+- `canEditMetadata(status)`: returns `true` for DRAFT and REJECTED
+- `canDelete(status)`: returns `true` for DRAFT only (deleting a rejected report is destructive; reopen first)
+- `transition()`: REJECTED → DRAFT requires explicit `reopen`; no REJECTED → SUBMITTED shortcut
+
+**Trade-off:** Two-step re-submit (reopen → submit) rather than one-step. The explicit reopen prevents accidental re-submission and gives the user a clear checkpoint.
 
 ### 2. AI Extraction: Synchronous / Immediate
 
@@ -108,21 +116,19 @@ The backend Dockerfile installs `openssl` via `apk add --no-cache openssl` befor
 
 ## 14. Phase 3a: Report and Item Service Design Decisions
 
-### Duplicated `findOwnedReport` Helper
+### Shared `findOwnedReport` Utility
 
-Both `ReportService` and `ItemService` have identical `findOwnedReport(reportId, userId)` helper functions that fetch a report, verify existence, and check ownership.
+Both `ReportService` and `ItemService` use a shared `findOwnedReport(prisma, reportId, userId, include?)` helper that fetches a report, verifies existence, and checks ownership. It accepts an optional Prisma `include` parameter to avoid separate queries when the caller needs related data (e.g., items).
 
-**Why:** The function is only 4-5 lines. Extracting to a shared utility (`common/db.ts` or `common/access.ts`) would be cleaner but introduces a new import graph and module. For Phase 3a, keeping it duplicated is acceptable — the duplication is obvious and easy to refactor later if more modules need it.
+**Why:** Originally duplicated between modules, then refactored into `report.utils.ts`. The `include` param was added to eliminate a double-query in `getById()` — a single call to `findOwnedReport(prisma, id, userId, { items: true })` returns the report with items in one round trip.
 
-**Trade-off:** Duplication vs. shared module. The cost of duplication is low here. Refactor when a third module needs the pattern.
+**Trade-off:** The utility is in the reports module. If more modules need ownership-gated queries, it should move to `common/access.ts`. For now, the cross-module import is acceptable.
 
-### Report Field Edits Allowed in REJECTED Status
+### Report Metadata Edits Allowed in REJECTED Status
 
-The `PUT /api/reports/:id` endpoint allows updating `title` and `description` when the report status is REJECTED, not just DRAFT. However, item edits remain locked to DRAFT status only.
+The `PUT /api/reports/:id` endpoint allows updating `title` and `description` when the report status is REJECTED, matching the behavior for items (`canEditItems` also returns `true` for REJECTED).
 
-**Why:** The `docs/architecture.md` specification explicitly states "DRAFT/REJECTED only" for report field updates. This makes practical sense — a user reviewing a rejected report may want to revise the title or description before deciding whether to reopen and resubmit. Items require the explicit reopen action, which is a heavier workflow step.
-
-**Trade-off:** Looser edit lock for report fields vs. tighter lock for items. This is intentional — metadata adjustments are lightweight, but item changes signal substantive revision.
+**Why:** The assessment spec explicitly states "user regains edit rights" on rejection. This applies to both items and metadata — a user reviewing a rejected report should be able to revise title, description, and items before deciding to reopen and resubmit.
 
 ### Block Empty Report Submission
 
@@ -134,19 +140,25 @@ The `submit()` endpoint returns a `ValidationError` if the report has zero expen
 
 ### Nested Item Routes with Defense-in-Depth
 
-Item routes are mounted at `/api/reports/:reportId/items`, and the service verifies that each item actually belongs to the specified report (e.g., `WHERE id = ? AND reportId = ?`).
+Item routes are mounted at `/api/reports/:reportId/items`, and the service verifies that each item actually belongs to the specified report (e.g., checking `existingItem.reportId !== reportId`).
 
 **Why:** Items have no independent existence — every item operation requires the parent report's context (for ownership checks, DRAFT status validation, and total recomputation). Nesting the routes makes this relationship explicit in the URL structure. The extra `reportId` check in the service is defense-in-depth: even if a client manipulates the URL to target an item on a different report, the database query will fail.
 
-**Trade-off:** One extra `WHERE` clause per item mutation. Negligible performance cost for stronger security.
+**Trade-off:** One extra check per item mutation. Negligible performance cost for stronger security.
 
 ### `transactionDate` as `z.string().datetime()`
 
 The Zod schema uses `z.string().datetime()` for `transactionDate`, not `z.date()`.
 
-**Why:** Express's `express.json()` middleware parses request bodies into plain JavaScript objects — ISO date strings remain as strings, not `Date` objects. Using `z.string().datetime()` validates the ISO 8601 format at the route level, then the service converts to a `Date` object for Prisma. Using `z.date()` would fail validation because the incoming value is a string.
+**Why:** Express's `express.json()` middleware parses request bodies into plain JavaScript objects — ISO date strings remain as strings, not `Date` objects. Using `z.string().datetime()` validates the ISO 8601 format at the route level, then the service converts to a `Date` object for Prisma.
 
 **Trade-off:** Type conversion happens in the service layer rather than the route layer. This is a common Express/JSON pattern.
+
+### State Machine as Single Source of Truth
+
+All status-dependent behavior flows through `report-state-machine.ts`. Service functions call `transition()`, `canEditItems()`, `canEditMetadata()`, and `canDelete()` instead of checking `report.status` directly. The state machine throws `StateTransitionError` (mapped to HTTP 400) and `ValidationError` (also 400) rather than plain `Error` (which would map to 500).
+
+**Why:** Centralizing status logic in one module ensures consistency and makes transitions auditable. If a new status (e.g., `IN_REVIEW`) is added, only the state machine and its tests need updating — service code remains unchanged.
 
 ## 15. Phase 3b: Frontend Report UI Decisions
 
