@@ -123,30 +123,34 @@ Edit guards:
 - `DELETE /api/reports/:reportId/items/:id` — delete item
 
 ### Receipts
-- `POST   /api/reports/:reportId/items/:id/receipt` — upload receipt, returns extracted data
+- `POST   /api/reports/:reportId/items/:itemId/receipt` — upload receipt, returns extracted data + updated item
+- `DELETE /api/reports/:reportId/items/:itemId/receipt` — remove receipt from item
 
 ### Receipt Upload & AI Extraction Flow
 
 ```
-Client                          Backend                         OpenAI
+Client                          Backend                         AI Provider
   │                                │                              │
-  │──POST /items/:id/receipt──────►│                              │
+  │──POST /items/:itemId/receipt──►│                              │
   │  (multipart: file)            │                              │
-  │                               │──save to uploads/──────────►│
-  │                               │──send image/PDF─────────────►│
-  │                               │◄──extracted JSON────────────│
-  │                               │──update item.receiptUrl─────►│
+  │                               │──save to uploads/           │
+  │                               │──IExtractionService.extract─►│
+  │                               │◄──ExtractedData────────────│
+  │                               │──update item + recompute──  │
   │◄──{ item, extracted }────────│                              │
   │                               │                              │
   │  (user reviews, edits, saves) │                              │
-  │──PUT /items/:id──────────────►│                              │
+  │──PUT /items/:itemId──────────►│                              │
   │  (final values)               │                              │
 ```
 
 - **Synchronous extraction**: upload blocks until LLM responds (2-5s typical). Frontend shows loading spinner.
-- **File storage**: local filesystem at `backend/uploads/`. `receiptUrl` stores the relative path.
-- **Mockable**: `OPENAI_API_KEY=dummy` falls back to a mock extractor returning static data.
+- **File storage**: local filesystem at `backend/uploads/`. `receiptUrl` stores `/uploads/<filename>`. Static serving is mounted at `/uploads`.
+- **Provider abstraction**: `IExtractionService` interface with two implementations — `OpenAIExtractionService` (real calls via OpenAI SDK) and `MockExtractionService` (static data). Factory selects based on `OPENAI_API_KEY`.
+- **OpenAI-compatible providers**: set `OPENAI_BASE_URL` to any OpenAI-compatible endpoint (LiteLLM, Ollama, OpenRouter, Together AI). No code changes required.
+- **Mockable**: `OPENAI_API_KEY=dummy` or empty falls back to mock extractor returning static data.
 - **Accepted formats**: PDF, PNG, JPG, WEBP (max 10MB via multer config).
+- **Extraction updates item**: extracted fields (merchantName, amount, currency, transactionDate) are written back to the item and total is recomputed in a transaction.
 
 ### Admin
 - `GET    /api/admin/reports` — list all reports, `?status=` filter, `?userId=` filter

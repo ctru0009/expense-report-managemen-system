@@ -174,6 +174,14 @@ These decisions define how the expense report state machine works and what const
 
 **Trade-off:** Won't scale if the dataset grows significantly. The fix is straightforward — add a `/api/reports/stats` endpoint and swap the client-side computation.
 
+### 24. No Real-Time Updates — Manual Refresh Only
+
+**What:** When an admin changes a report's status (approve/reject) or a user adds a new item, other views showing the same data do not update automatically. Users must manually navigate or refresh to see changes.
+
+**Why:** AI-assisted development suggested several real-time approaches (polling, React Query with background refetch, SSE, WebSockets) to keep the UI in sync. Each adds meaningful complexity — new dependencies, connection lifecycle management, or backend event infrastructure — for marginal gain in a demo where a single user is testing workflows. Manual refresh is the simplest approach that works correctly today.
+
+**Trade-off:** Stale data if a user and admin are both viewing the same report. Acceptable for a take-home exercise. A production system would add React Query with background refetch as a first step, then SSE or WebSockets if sub-second sync is required.
+
 ---
 
 ## Infrastructure
@@ -208,7 +216,15 @@ These decisions define how the expense report state machine works and what const
 
 **Trade-off:** The request blocks for the duration of the LLM call. If the LLM is slow or the file is large, the user waits. With more time, a job queue (Redis + BullMQ) would make this async with immediate upload response and polling for results.
 
-### 23. Extracted recomputeTotal for Testability
+### 23. Abstract Extraction Interface for Provider Swapping
+
+**What:** The AI extraction service is abstracted behind an `IExtractionService` interface with a factory function (`getExtractionService()`). Two implementations exist: `OpenAIExtractionService` (real GPT-4o-mini calls) and `MockExtractionService` (returns static data). The factory selects based on `OPENAI_API_KEY`: real key → OpenAI, empty or `dummy` → Mock. An `OPENAI_BASE_URL` env var supports any OpenAI-compatible API endpoint without code changes.
+
+**Why:** The assessment spec requires LLM-powered extraction, but the specific provider shouldn't be hardcoded. Three common scenarios need to work: (1) development without an API key, (2) OpenAI directly, (3) alternative providers like Anthropic via a proxy, Ollama locally, or OpenRouter. The `OPENAI_BASE_URL` approach handles scenarios 2 and 3 with zero code changes — the `openai` npm SDK supports custom base URLs natively. For providers with entirely different APIs (e.g., native Anthropic SDK), adding a new `IExtractionService` implementation is a single file that plugs into the factory.
+
+**Trade-off:** The `IExtractionService` interface only has one production implementation today. The abstraction cost is minimal (one interface file + one factory file), but the `OPENAI_BASE_URL` env var means you must use an OpenAI-compatible endpoint. True Anthropic/Claude support would require a new implementation class — roughly 50 lines following the existing pattern. This is an acceptable trade-off: the 80% case (OpenAI or OpenAI-compatible providers) works with just an env var, and the remaining 20% (incompatible providers) has a clear extension point.
+
+### 24. Extracted recomputeTotal for Testability
 
 **What:** `recomputeTotal` was extracted from `item.service.ts` into `item.utils.ts`, following the same pattern as `findOwnedReport` in `report.utils.ts`.
 
@@ -222,7 +238,9 @@ These decisions define how the expense report state machine works and what const
 
 I would prioritize in this order, based on the ratio of user value to implementation effort:
 
-**1. Background job queue for receipt processing.** This is the highest-value architectural improvement. Currently, receipt extraction blocks the HTTP request — if the LLM is slow or the file is large, the user stares at a spinner. With a job queue (Redis + BullMQ or PgBoss), uploads return immediately, the frontend polls for results, and failures can be retried gracefully. This also unlocks batch receipt uploads — a real user need when expense reports contain 10-20 receipts. The queue would add a `/api/receipts/:id/status` polling endpoint and a background worker process in Docker Compose.
+**1. Real-time data synchronization.** Replace `useState`+`useEffect` fetching with React Query (TanStack Query) to get stale-while-revalidate semantics, automatic background refetching, and cache invalidation. This is the highest-impact UX improvement — currently, an admin approving a report doesn't reflect on the user's screen until they manually refresh. React Query would handle this with `refetchOnWindowFocus` and configurable `refetchInterval`, no backend changes required. If sub-second sync is needed, add a lightweight SSE endpoint (`GET /api/events`) that broadcasts change events to trigger targeted refetches.
+
+**2. Background job queue for receipt processing.** This is the highest-value architectural improvement. Currently, receipt extraction blocks the HTTP request — if the LLM is slow or the file is large, the user stares at a spinner. With a job queue (Redis + BullMQ or PgBoss), uploads return immediately, the frontend polls for results, and failures can be retried gracefully. This also unlocks batch receipt uploads — a real user need when expense reports contain 10-20 receipts. The queue would add a `/api/receipts/:id/status` polling endpoint and a background worker process in Docker Compose.
 
 **2. Audit trail for status transitions.** A `StatusHistory` table recording `who`, `from_status`, `to_status`, `timestamp`, and an optional `reason` comment. This is the most important missing feature from a business perspective — real expense systems live and die by their audit records. Compliance teams need an immutable timeline, and approvers need to see what happened before they act. It would be surfaced in the admin report detail view as a timeline component. The schema is straightforward; the challenge is making it visible and useful rather than just stored.
 

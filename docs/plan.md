@@ -78,17 +78,21 @@
 **Sequential — depends on Phase 3.**
 
 ### 4a: Backend Receipt Upload + AI Extraction
-- [ ] Multer config for file uploads (PDF, PNG, JPG, WEBP; max 10MB)
-- [ ] `POST /api/reports/:reportId/items/:id/receipt` — save file to `backend/uploads/`, store path on `item.receiptUrl`
-- [ ] OpenAI integration: send image/PDF to GPT-4o-mini, extract merchant_name, amount, currency, transaction_date
-- [ ] Return extracted data in upload response alongside updated item
-- [ ] Mock extraction service for development (returns static data when `OPENAI_API_KEY=dummy`)
+- [x] Multer config for file uploads (PDF, PNG, JPG, WEBP; max 10MB)
+- [x] `POST /api/reports/:reportId/items/:id/receipt` — save file to `backend/uploads/`, store path on `item.receiptUrl`
+- [x] OpenAI integration: send image/PDF to GPT-4o-mini, extract merchant_name, amount, currency, transaction_date
+- [x] Return extracted data in upload response alongside updated item
+- [x] Mock extraction service for development (returns static data when `OPENAI_API_KEY=dummy`)
+- [x] Abstract extraction interface (`IExtractionService`) for provider swapping via `OPENAI_BASE_URL` env var
 
 ### 4b: Frontend Receipt UI
-- [ ] Receipt upload button on item form (file input, drag-and-drop)
-- [ ] Loading state during extraction (spinner, "Analyzing receipt..." banner)
-- [ ] Pre-fill form with extracted data (editable text fields, user can override any value)
-- [ ] Receipt preview: show uploaded image/PDF thumbnail next to form
+- [x] Receipt upload button on item form (file input, drag-and-drop)
+- [x] Loading state during extraction (spinner, "Analyzing receipt..." banner)
+- [x] Pre-fill form with extracted data (editable text fields, user can override any value)
+- [x] Receipt preview: show uploaded image/PDF thumbnail next to form
+- [x] Two-panel modal layout matching Stitch prototype (receipt left, form right)
+- [x] AI highlight class on extracted fields (yellow bg + gold border, reverts on focus)
+- [x] Receipt indicator column in report detail items table
 
 ---
 
@@ -97,17 +101,17 @@
 **5a (backend) and 5b (frontend) can run in PARALLEL via worktrees.**
 
 ### 5a: Backend Admin
-- [ ] `GET /api/admin/reports` — list all reports across all users, `?status=` and `?userId=` filters
-- [ ] `POST /api/admin/reports/:id/approve` — SUBMITTED → APPROVED (uses state machine `transition()`)
-- [ ] `POST /api/admin/reports/:id/reject` — SUBMITTED → REJECTED (uses state machine `transition()`)
-- [ ] RBAC: `requireRole('admin')` middleware on all admin routes
-- [ ] Admin routes mounted at `/api/admin` in app.ts
+- [x] `GET /api/admin/reports` — list all reports across all users, `?status=` and `?userId=` filters
+- [x] `POST /api/admin/reports/:id/approve` — SUBMITTED → APPROVED (uses state machine `transition()`)
+- [x] `POST /api/admin/reports/:id/reject` — SUBMITTED → REJECTED (uses state machine `transition()`)
+- [x] RBAC: `requireRole('admin')` middleware on all admin routes
+- [x] Admin routes mounted at `/api/admin` in app.ts
 
 ### 5b: Frontend Admin
-- [ ] Admin route (protected, admin-only, redirects non-admin to /reports)
-- [ ] Admin report list (all users, status filter tabs)
-- [ ] Approve/reject action buttons on SUBMITTED reports
-- [ ] Admin report detail view (read-only, shows items and status history)
+- [x] Admin route (protected, admin-only, redirects non-admin to /reports)
+- [x] Admin report list (all users, status filter tabs)
+- [x] Approve/reject action buttons on SUBMITTED reports
+- [x] Admin report detail view (read-only, shows items and status history)
 
 ---
 
