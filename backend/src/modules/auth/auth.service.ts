@@ -5,7 +5,7 @@ import { config } from '../../config/env';
 import { ConflictError, UnauthorizedError, ValidationError } from '../../common/errors';
 
 function signToken(userId: string, role: string) {
-  return jwt.sign({ userId, role }, config.jwtSecret, { expiresIn: config.jwtExpiresIn as string });
+  return jwt.sign({ userId, role }, config.jwtSecret, { expiresIn: config.jwtExpiresIn });
 }
 
 export async function signup(email: string, password: string) {
