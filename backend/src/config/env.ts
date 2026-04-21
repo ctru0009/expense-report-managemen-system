@@ -10,4 +10,5 @@ export const config = {
   databaseUrl: process.env.DATABASE_URL!,
   uploadDir: process.env.UPLOAD_DIR || './uploads',
   openaiApiKey: process.env.OPENAI_API_KEY || '',
+  openaiBaseUrl: process.env.OPENAI_BASE_URL || undefined,
 };
