@@ -88,9 +88,9 @@ frontend/
 ### Key Patterns
 
 - **Layered backend:** Routes → Controller (thin) → Service (business logic) → Prisma (data). State machine validation lives in the service layer only.
-- **Status state machine:** DRAFT → SUBMITTED → APPROVED (terminal). REJECTED → DRAFT (user must re-edit then re-submit). Transitions validated in `ReportService`.
+- **Status state machine:** DRAFT → SUBMITTED → APPROVED (terminal). REJECTED → DRAFT requires an explicit "reopen" action by the user (`POST /api/reports/:id/reopen`). Items only editable in DRAFT status.
 - **Total amount:** Stored on `ExpenseReport.totalAmount`, recomputed on every item change within a transaction.
-- **File locking:** Expense items can only be modified when parent report is in DRAFT or REJECTED status.
+- **No pagination:** List endpoints return all results. Filter by `?status=` only.
 
 ## Environment Variables
 

@@ -48,9 +48,10 @@
 - [ ] Unit tests for state machine (all transitions + invalid transitions)
 - [ ] Report CRUD routes (create, read own, update, delete)
 - [ ] Report submit endpoint (DRAFT → SUBMITTED)
-- [ ] Item CRUD routes (create, read, update, delete — locked by status)
+- [ ] Report reopen endpoint (REJECTED → DRAFT, explicit user action)
+- [ ] Item CRUD routes (create, read, update, delete — DRAFT status only)
 - [ ] Total amount recomputation in transaction
-- [ ] List with status filter
+- [ ] List with status filter (no pagination)
 
 ### 3b: Frontend Report UI
 - [ ] Report list page (with status filter tabs)
