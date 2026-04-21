@@ -7,6 +7,8 @@ import SignupPage from './pages/SignupPage';
 import ReportListPage from './pages/ReportListPage';
 import ReportCreatePage from './pages/ReportCreatePage';
 import ReportDetailPage from './pages/ReportDetailPage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
+import AdminReportDetailPage from './pages/AdminReportDetailPage';
 
 export default function App() {
   return (
@@ -31,9 +33,15 @@ export default function App() {
               path="admin"
               element={
                 <ProtectedRoute requiredRole="ADMIN">
-                  <div className="p-8">
-                    <p className="text-on-surface-variant font-medium text-lg">Admin Dashboard — coming in Phase 5</p>
-                  </div>
+                  <AdminDashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="admin/reports/:id"
+              element={
+                <ProtectedRoute requiredRole="ADMIN">
+                  <AdminReportDetailPage />
                 </ProtectedRoute>
               }
             />
