@@ -21,20 +21,20 @@
 **2a (backend) and 2b (frontend) can run in PARALLEL via worktrees.**
 
 ### 2a: Backend Auth
-- [ ] Prisma User model + migration
-- [ ] POST /api/auth/signup (validate, hash password, return JWT)
-- [ ] POST /api/auth/login (validate, compare hash, return JWT)
-- [ ] Auth middleware (verify JWT, attach req.user)
-- [ ] RBAC middleware (requireRole)
-- [ ] Seed script: create admin user
+- [x] Prisma User model + migration
+- [x] POST /api/auth/signup (validate, hash password, return JWT)
+- [x] POST /api/auth/login (validate, compare hash, return JWT)
+- [x] Auth middleware (verify JWT, attach req.user)
+- [x] RBAC middleware (requireRole)
+- [x] Seed script: create admin user
 
 ### 2b: Frontend Auth
-- [ ] API client (axios instance with interceptor for JWT)
-- [ ] Auth context + useAuth hook
-- [ ] Login page
-- [ ] Signup page
-- [ ] Protected route component
-- [ ] App routing setup (React Router)
+- [x] API client (axios instance with interceptor for JWT)
+- [x] Auth context + useAuth hook
+- [x] Login page
+- [x] Signup page
+- [x] Protected route component
+- [x] App routing setup (React Router)
 
 ---
 
