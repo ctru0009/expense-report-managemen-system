@@ -88,6 +88,18 @@ The backend Dockerfile installs `openssl` via `apk add --no-cache openssl` befor
 
 **Why:** Prisma's query engine is a native binary that links against `libssl`. The `node:20-alpine` image ships without OpenSSL, causing `prisma migrate deploy` to crash at runtime with `Error: Could not parse schema engine response`. This is a known Prisma-on-Alpine issue.
 
+## 12. Multi-model Workflow: Claude + GPT for Different Task Types
+
+**When:** Phase 2 implementation, parallel backend/frontend agents
+
+**Context:** Running two parallel Claude Code agents (backend + frontend) hit rate limits mid-phase. Rather than waiting, routed mechanical tasks to a lighter model.
+
+**Decision:** Claude for architecture, business logic, and judgment-heavy implementation. GPT-5.4-mini for commit message generation and file scaffolding when Claude was rate-limited.
+
+**Why:** Not all tasks require the same model. Commit messages and boilerplate don't need deep context — they need speed. Reserving Claude capacity for state machine logic, Zod validation, and AI extraction prompt engineering is the right trade-off.
+
+**What I'd do differently at scale:** Set up model routing upfront rather than reactively — define task categories and assign models before hitting limits mid-flow.
+
 ---
 
 ## If I Had One More Day
