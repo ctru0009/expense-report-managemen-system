@@ -1,13 +1,11 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../config/prisma';
 import { config } from '../../config/env';
 import { ConflictError, UnauthorizedError, ValidationError } from '../../common/errors';
 
-const prisma = new PrismaClient();
-
 function signToken(userId: string, role: string) {
-  return jwt.sign({ userId, role }, config.jwtSecret, { expiresIn: '7d' });
+  return jwt.sign({ userId, role }, config.jwtSecret, { expiresIn: config.jwtExpiresIn as string });
 }
 
 export async function signup(email: string, password: string) {
