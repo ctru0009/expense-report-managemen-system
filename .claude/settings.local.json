@@ -1,5 +1,11 @@
 {
   "enabledPlugins": {
     "vtsls@claude-code-lsps": true
+  },
+  "permissions": {
+    "allow": [
+      "Bash(docker-compose down *)",
+      "Bash(docker-compose up *)"
+    ]
   }
 }
