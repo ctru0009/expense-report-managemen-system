@@ -93,7 +93,8 @@ export default function ReportDetailPage() {
   }
 
   const items = report?.items ?? [];
-  const canEditItems = report?.status === 'DRAFT';
+  const editRights = report?.status === 'DRAFT' || report?.status === 'REJECTED';
+  const canEditItems = editRights;
   const canSubmit = report?.status === 'DRAFT' && items.length > 0;
   const canDelete = report?.status === 'DRAFT';
   const canReopen = report?.status === 'REJECTED';
@@ -247,7 +248,7 @@ export default function ReportDetailPage() {
                   <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Merchant</th>
                   <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Date</th>
                   <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Category</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Currency</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Receipt</th>
                   <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest text-right">Amount</th>
                   {canEditItems && (
                     <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest text-right">Actions</th>
@@ -266,8 +267,24 @@ export default function ReportDetailPage() {
                         {CATEGORY_LABELS[item.category] || item.category}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm font-semibold text-on-surface-variant">{item.currency}</td>
-                    <td className="px-6 py-4 font-black text-on-surface tabular-nums text-right">{Number(item.amount).toFixed(2)}</td>
+                    <td className="px-6 py-4">
+                      {item.receiptUrl ? (
+                        <a
+                          href={item.receiptUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-primary font-bold text-xs hover:underline"
+                        >
+                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5v5h-1v-5h1zM10 8v1H9V8h1zm8 6.5h-1V14h1v.5zm-1-2h-1V12h1v.5zm0-2h-1v-1h1v.5zm0-2h-1V10h1v.5zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6z" />
+                          </svg>
+                          View
+                        </a>
+                      ) : (
+                        <span className="text-on-surface-variant/50 text-xs">None</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 font-black text-on-surface tabular-nums text-right">{item.currency} {Number(item.amount).toFixed(2)}</td>
                     {canEditItems && (
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">

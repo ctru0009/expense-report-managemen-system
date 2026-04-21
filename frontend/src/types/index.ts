@@ -58,6 +58,18 @@ export interface CreateItemRequest {
 
 export interface UpdateItemRequest extends Partial<CreateItemRequest> {}
 
+export interface ExtractedData {
+  merchantName?: string;
+  amount?: number;
+  currency?: string;
+  transactionDate?: string;
+}
+
+export interface ReceiptUploadResponse {
+  item: ExpenseItem;
+  extracted: ExtractedData;
+}
+
 export interface AdminExpenseReport extends ExpenseReport {
   user: { id: string; email: string };
 }
