@@ -57,3 +57,7 @@ export interface CreateItemRequest {
 }
 
 export interface UpdateItemRequest extends Partial<CreateItemRequest> {}
+
+export interface AdminExpenseReport extends ExpenseReport {
+  user: { id: string; email: string };
+}
