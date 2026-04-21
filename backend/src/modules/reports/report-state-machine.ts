@@ -1,7 +1,8 @@
 import { ReportStatus } from '@prisma/client';
+import { StateTransitionError, ValidationError } from '../../common/errors';
 
 const VALID_TRANSITIONS: Record<ReportStatus, ReportStatus[]> = {
-  DRAFT: ['SUBMITTED', 'DRAFT'],
+  DRAFT: ['SUBMITTED'],
   SUBMITTED: ['APPROVED', 'REJECTED'],
   APPROVED: [],
   REJECTED: ['DRAFT'],
@@ -13,22 +14,25 @@ export function transition(current: ReportStatus, action: string): ReportStatus 
     approve: 'APPROVED',
     reject: 'REJECTED',
     reopen: 'DRAFT',
-    edit: 'DRAFT',
   };
 
   const target = actionMap[action];
   if (!target) {
-    throw new Error(`Unknown action: ${action}`);
+    throw new ValidationError(`Unknown action: ${action}`);
   }
 
   if (!VALID_TRANSITIONS[current].includes(target)) {
-    throw new Error(`Cannot ${action} a report in ${current} status`);
+    throw new StateTransitionError(`Cannot ${action} a report in ${current} status`);
   }
 
   return target;
 }
 
 export function canEditItems(status: ReportStatus): boolean {
+  return status === 'DRAFT';
+}
+
+export function canEditMetadata(status: ReportStatus): boolean {
   return status === 'DRAFT';
 }
 
