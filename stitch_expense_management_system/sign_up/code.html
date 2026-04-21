@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Sign Up | Precision Ledger</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-bright": "#f6fafe",
+                        "primary-fixed-dim": "#b0c6ff",
+                        "tertiary": "#7f2b00",
+                        "tertiary-container": "#a63b01",
+                        "on-secondary-fixed": "#0b1c30",
+                        "on-background": "#171c1f",
+                        "primary-fixed": "#d9e2ff",
+                        "inverse-primary": "#b0c6ff",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "error": "#ba1a1a",
+                        "on-primary-fixed": "#001945",
+                        "background": "#f6fafe",
+                        "tertiary-fixed-dim": "#ffb599",
+                        "secondary": "#505f76",
+                        "surface-container-low": "#f0f4f8",
+                        "tertiary-fixed": "#ffdbce",
+                        "on-primary": "#ffffff",
+                        "surface-variant": "#dfe3e7",
+                        "on-tertiary-fixed": "#370e00",
+                        "on-primary-fixed-variant": "#00419d",
+                        "inverse-surface": "#2c3134",
+                        "on-surface": "#171c1f",
+                        "outline-variant": "#c3c6d6",
+                        "on-surface-variant": "#424653",
+                        "error-container": "#ffdad6",
+                        "surface": "#f6fafe",
+                        "secondary-fixed-dim": "#b7c8e1",
+                        "surface-container-high": "#e4e9ed",
+                        "surface-container-highest": "#dfe3e7",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed": "#d3e4fe",
+                        "on-secondary-container": "#54647a",
+                        "outline": "#737785",
+                        "inverse-on-surface": "#edf1f5",
+                        "primary-container": "#0a58ca",
+                        "on-primary-container": "#ccd8ff",
+                        "primary": "#00429d",
+                        "surface-dim": "#d6dade",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#7f2b00",
+                        "secondary-container": "#d0e1fb",
+                        "on-tertiary": "#ffffff",
+                        "surface-tint": "#0958ca",
+                        "on-error-container": "#93000a",
+                        "surface-container": "#eaeef2",
+                        "on-error": "#ffffff",
+                        "on-tertiary-container": "#ffcebc"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .form-gradient-btn {
+            background: linear-gradient(135deg, #00429d 0%, #0a58ca 100%);
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface flex items-center justify-center min-h-screen selection:bg-primary-fixed selection:text-on-primary-fixed">
+<div class="flex w-full max-w-6xl min-h-[800px] overflow-hidden rounded-xl bg-surface-container-low shadow-xl m-4">
+<!-- Left Side: Visual Narrative -->
+<div class="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 overflow-hidden bg-primary">
+<div class="absolute inset-0 bg-primary-container opacity-20"></div>
+<div class="absolute inset-0 z-0">
+<img alt="Architectural ledger detail" class="w-full h-full object-cover mix-blend-overlay opacity-40" data-alt="Close-up of high-end architectural drawing and professional financial charts with deep shadows and sharp blue light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCNU8CB_B3_2qkGdbo_o8yVuRTWczvv6JxvVzHGgvCkuQdI5GJdQ_wR5MIzZMDWyi3VC4pZ2dLoNXIhe-kvcU-0osbaxGz856BDOfNHOVyW1-drGFQKoxSwyZ5flkfqSQjD1ZmbsTyU-8De3wsC7R2E6PJQ4qFZ4mDxGKkI9BKR7RHccZ-Ed8VDX8-WApUUL1ibRecP7KgDULxSev_dq-BwXyUTZdO6AmorJQ_-orkWpN5DCz9AnnmzIdS0-cz0-T8EspXsgYrlDjkz"/>
+</div>
+<div class="relative z-10">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-primary-container text-4xl" data-icon="account_balance">account_balance</span>
+<h1 class="text-2xl font-black tracking-tighter text-white">Precision Ledger</h1>
+</div>
+</div>
+<div class="relative z-10 max-w-sm">
+<h2 class="text-4xl font-extrabold text-white leading-tight mb-6">Master Your Institutional Expenses.</h2>
+<p class="text-on-primary-container font-medium text-lg opacity-90">An architectural approach to fiscal responsibility and expense reporting for the modern enterprise.</p>
+</div>
+<div class="relative z-10 flex gap-8">
+<div class="flex flex-col">
+<span class="text-3xl font-bold text-white tracking-tight">100%</span>
+<span class="text-xs uppercase tracking-widest text-on-primary-container mt-1">Audit Transparency</span>
+</div>
+<div class="flex flex-col">
+<span class="text-3xl font-bold text-white tracking-tight">0.1s</span>
+<span class="text-xs uppercase tracking-widest text-on-primary-container mt-1">Latency Processing</span>
+</div>
+</div>
+</div>
+<!-- Right Side: Signup Form -->
+<div class="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 sm:p-16 md:p-24 bg-surface-container-lowest relative">
+<!-- Branding for Mobile -->
+<div class="lg:hidden absolute top-12 left-12 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="account_balance">account_balance</span>
+<span class="font-black tracking-tighter text-primary">PRECISION</span>
+</div>
+<div class="w-full max-w-md">
+<header class="mb-10 text-left">
+<h2 class="text-3xl font-extrabold tracking-tight text-on-surface mb-2">Create Account</h2>
+<p class="text-on-surface-variant font-medium">Configure your enterprise workspace credentials.</p>
+</header>
+<form class="space-y-6">
+<!-- Email Field -->
+<div class="space-y-1.5">
+<label class="block text-[0.75rem] font-bold uppercase tracking-widest text-on-surface-variant px-1" for="email">Email Address</label>
+<div class="relative group">
+<input class="w-full bg-surface-container-low border-0 border-b-2 border-transparent focus:border-primary focus:ring-0 focus:bg-surface-container-lowest py-3 px-4 transition-all placeholder:text-outline text-on-surface" id="email" name="email" placeholder="name@company.com" required="" type="email"/>
+<span class="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline text-xl group-focus-within:text-primary" data-icon="mail">mail</span>
+</div>
+</div>
+<!-- Role Selector -->
+<div class="space-y-1.5">
+<label class="block text-[0.75rem] font-bold uppercase tracking-widest text-on-surface-variant px-1" for="role">Organization Role</label>
+<div class="relative group">
+<select class="w-full bg-surface-container-low border-0 border-b-2 border-transparent focus:border-primary focus:ring-0 focus:bg-surface-container-lowest py-3 px-4 transition-all text-on-surface appearance-none" id="role" name="role" required="">
+<option disabled="" selected="" value="">Select your access level</option>
+<option value="user">System User</option>
+<option value="admin">Administrator</option>
+</select>
+<span class="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline text-xl pointer-events-none group-focus-within:text-primary" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Password Field -->
+<div class="space-y-1.5">
+<label class="block text-[0.75rem] font-bold uppercase tracking-widest text-on-surface-variant px-1" for="password">Password</label>
+<div class="relative group">
+<input class="w-full bg-surface-container-low border-0 border-b-2 border-transparent focus:border-primary focus:ring-0 focus:bg-surface-container-lowest py-3 px-4 transition-all placeholder:text-outline text-on-surface" id="password" name="password" placeholder="••••••••" required="" type="password"/>
+<span class="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline text-xl group-focus-within:text-primary" data-icon="lock">lock</span>
+</div>
+</div>
+<!-- Confirm Password -->
+<div class="space-y-1.5">
+<label class="block text-[0.75rem] font-bold uppercase tracking-widest text-on-surface-variant px-1" for="confirm-password">Confirm</label>
+<div class="relative group">
+<input class="w-full bg-surface-container-low border-0 border-b-2 border-transparent focus:border-primary focus:ring-0 focus:bg-surface-container-lowest py-3 px-4 transition-all placeholder:text-outline text-on-surface" id="confirm-password" name="confirm-password" placeholder="••••••••" required="" type="password"/>
+<span class="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline text-xl group-focus-within:text-primary" data-icon="lock_reset">lock_reset</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3 py-2 px-1">
+<input class="h-4 w-4 rounded border-outline-variant text-primary focus:ring-primary" id="terms" name="terms" required="" type="checkbox"/>
+<label class="text-sm text-on-surface-variant" for="terms">
+                            I agree to the <a class="text-primary font-semibold hover:underline" href="#">Terms of Service</a> and <a class="text-primary font-semibold hover:underline" href="#">Privacy Policy</a>.
+                        </label>
+</div>
+<div class="pt-4">
+<button class="form-gradient-btn w-full py-4 rounded-lg text-white font-bold tracking-tight shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group" type="submit">
+<span>Initialize Account</span>
+<span class="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</form>
+<footer class="mt-12 text-center">
+<p class="text-on-surface-variant font-medium">
+                        Already part of the network? 
+                        <a class="text-primary font-bold hover:underline ml-1" href="#">Login to Workspace</a>
+</p>
+</footer>
+</div>
+<!-- Footer Meta -->
+<div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-4 text-[0.65rem] uppercase tracking-widest text-outline font-bold">
+<span>Precision Ledger v4.2</span>
+<span class="h-1 w-1 bg-outline-variant rounded-full"></span>
+<span>Secure ISO-27001</span>
+</div>
+</div>
+</div>
+</body></html>

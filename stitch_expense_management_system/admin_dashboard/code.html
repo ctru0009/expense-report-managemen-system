@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Precision Ledger | Admin Reports</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-bright": "#f6fafe",
+                        "primary-fixed-dim": "#b0c6ff",
+                        "tertiary": "#7f2b00",
+                        "tertiary-container": "#a63b01",
+                        "on-secondary-fixed": "#0b1c30",
+                        "on-background": "#171c1f",
+                        "primary-fixed": "#d9e2ff",
+                        "inverse-primary": "#b0c6ff",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "error": "#ba1a1a",
+                        "on-primary-fixed": "#001945",
+                        "background": "#f6fafe",
+                        "tertiary-fixed-dim": "#ffb599",
+                        "secondary": "#505f76",
+                        "surface-container-low": "#f0f4f8",
+                        "tertiary-fixed": "#ffdbce",
+                        "on-primary": "#ffffff",
+                        "surface-variant": "#dfe3e7",
+                        "on-tertiary-fixed": "#370e00",
+                        "on-primary-fixed-variant": "#00419d",
+                        "inverse-surface": "#2c3134",
+                        "on-surface": "#171c1f",
+                        "outline-variant": "#c3c6d6",
+                        "on-surface-variant": "#424653",
+                        "error-container": "#ffdad6",
+                        "surface": "#f6fafe",
+                        "secondary-fixed-dim": "#b7c8e1",
+                        "surface-container-high": "#e4e9ed",
+                        "surface-container-highest": "#dfe3e7",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed": "#d3e4fe",
+                        "on-secondary-container": "#54647a",
+                        "outline": "#737785",
+                        "inverse-on-surface": "#edf1f5",
+                        "primary-container": "#0a58ca",
+                        "on-primary-container": "#ccd8ff",
+                        "primary": "#00429d",
+                        "surface-dim": "#d6dade",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#7f2b00",
+                        "secondary-container": "#d0e1fb",
+                        "on-tertiary": "#ffffff",
+                        "surface-tint": "#0958ca",
+                        "on-error-container": "#93000a",
+                        "surface-container": "#eaeef2",
+                        "on-error": "#ffffff",
+                        "on-tertiary-container": "#ffcebc"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .tabular-numbers {
+            font-variant-numeric: tabular-nums;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body antialiased flex h-screen overflow-hidden">
+<!-- SideNavBar Component (JSON Anchor) -->
+<aside class="docked left-0 h-screen w-64 flex-shrink-0 bg-[#e4e9ed] dark:bg-slate-800 flex flex-col justify-between py-8 px-0 font-['Inter'] tracking-tight antialiased tonal background shifts no borders">
+<div class="space-y-8">
+<div class="px-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-primary rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-sm" style="font-variation-settings: 'FILL' 1;">account_balance</span>
+</div>
+<div>
+<h1 class="text-xl font-bold tracking-tighter text-[#171c1f] dark:text-white">Precision Ledger</h1>
+<p class="text-xs font-medium text-[#424653] dark:text-slate-400">Expense Management</p>
+</div>
+</div>
+</div>
+<nav class="space-y-1">
+<!-- Reports Tab -->
+<a class="flex items-center gap-3 px-6 py-3 text-[#424653] dark:text-slate-400 font-medium hover:bg-[#f0f4f8] dark:hover:bg-slate-700 transition-all scale-95 active:opacity-80 transition-transform" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="description">description</span>
+<span>Reports</span>
+</a>
+<!-- All Reports Tab (Active) -->
+<a class="flex items-center gap-3 px-6 py-3 border-l-4 border-[#00429d] text-[#00429d] font-semibold bg-transparent transition-all scale-95 active:opacity-80 transition-transform" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="analytics" style="font-variation-settings: 'FILL' 1;">analytics</span>
+<span>All Reports</span>
+</a>
+</nav>
+</div>
+<div class="px-6 space-y-4">
+<button class="w-full py-2.5 px-4 bg-gradient-to-br from-primary to-primary-container text-white rounded-lg font-semibold text-sm shadow-md flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-sm">add</span>
+                New Report
+            </button>
+<div class="pt-6 border-t border-outline-variant/10">
+<a class="flex items-center gap-3 py-2 text-[#424653] dark:text-slate-400 font-medium hover:bg-[#f0f4f8] dark:hover:bg-slate-700 transition-all" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="logout">logout</span>
+<span>Logout</span>
+</a>
+</div>
+</div>
+</aside>
+<div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+<!-- TopAppBar Component (JSON Anchor) -->
+<header class="flex items-center justify-between w-full px-8 py-4 sticky top-0 bg-[#f6fafe] dark:bg-slate-900 z-40 text-[#171c1f] dark:text-white font-['Inter'] font-semibold background shift from workspace surface flat no shadows">
+<div class="flex items-center gap-4">
+<h2 class="text-lg font-black text-[#00429d] dark:text-blue-500">The Precision Ledger</h2>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative hidden lg:block">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline text-sm">search</span>
+<input class="pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-lg text-sm w-64 focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest transition-all" placeholder="Search reports..." type="text"/>
+</div>
+<div class="flex items-center gap-3">
+<button class="w-10 h-10 flex items-center justify-center text-[#424653] dark:text-slate-400 hover:text-[#0a58ca] dark:hover:text-blue-300 transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center text-[#424653] dark:text-slate-400 hover:text-[#0a58ca] dark:hover:text-blue-300 transition-colors">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<div class="w-px h-6 bg-outline-variant/30 mx-1"></div>
+<div class="flex items-center gap-3 pl-2">
+<img alt="Administrator profile" class="w-9 h-9 rounded-full object-cover border-2 border-primary-fixed" data-alt="professional portrait of a confident male executive in a blue business suit against a clean architectural background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDwB_njWWcq4-qJBci1UJb70LiFpEVuTD9meziP_JrIPyNNh6JyINWoXmP4PwBcDpnMCvnKvYYWJ0tzSlu9nsKf0kbrOIEQQrO7i_BLt4lSMcvrmcGviObGTvKd8YuYHtYYIEid3I-11Jv8f5ZKC9DxjD-4hGs7GcuZA6nimuUVxPFeAWlhHqqmQhqMQelBCzzZrh5s_s6OcVMGC-Ck-BcxEGyyRSz-hGsoYD_WXlsT-O0QuW9I6SYHx0QO0LOPh8n6Co6LHEe27pA4"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Workspace Canvas -->
+<main class="flex-1 overflow-y-auto bg-surface p-8 scroll-smooth">
+<div class="max-w-7xl mx-auto">
+<!-- Header & Filters Area -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+<div>
+<h1 class="text-[2.25rem] font-bold tracking-[-0.02em] text-on-surface mb-2 leading-tight">Master Ledger</h1>
+<p class="text-on-surface-variant text-sm">Oversee and audit corporate expense submissions across all departments.</p>
+</div>
+<div class="bg-surface-container-low p-1 rounded-lg flex items-center gap-1">
+<button class="px-5 py-1.5 text-sm font-semibold rounded-[0.25rem] bg-surface-container-lowest text-primary shadow-sm">All</button>
+<button class="px-5 py-1.5 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors">Submitted</button>
+<button class="px-5 py-1.5 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors">Approved</button>
+<button class="px-5 py-1.5 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors">Rejected</button>
+</div>
+</div>
+<!-- Content Layer (The Architectural Anchor approach) -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden border border-outline-variant/15 shadow-[0px_12px_32px_rgba(23,28,31,0.04)]">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low/50">
+<th class="px-6 py-4 text-[0.75rem] font-bold uppercase tracking-[0.05em] text-on-surface-variant">User Email</th>
+<th class="px-6 py-4 text-[0.75rem] font-bold uppercase tracking-[0.05em] text-on-surface-variant">Report Title</th>
+<th class="px-6 py-4 text-[0.75rem] font-bold uppercase tracking-[0.05em] text-on-surface-variant">Status</th>
+<th class="px-6 py-4 text-[0.75rem] font-bold uppercase tracking-[0.05em] text-on-surface-variant">Total Amount</th>
+<th class="px-6 py-4 text-[0.75rem] font-bold uppercase tracking-[0.05em] text-on-surface-variant">Submitted Date</th>
+<th class="px-6 py-4 text-[0.75rem] font-bold uppercase tracking-[0.05em] text-on-surface-variant text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/15">
+<!-- Row 1: SUBMITTED -->
+<tr class="group hover:bg-surface-container-high/50 transition-colors">
+<td class="px-6 py-4">
+<div class="flex flex-col">
+<span class="font-semibold text-on-surface text-sm">m.vance@precision.com</span>
+<span class="text-xs text-on-surface-variant">Product Dept.</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm font-medium text-on-surface">Q3 Travel - Tokyo Tech Conf</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-fixed text-on-primary-fixed-variant">
+                                        SUBMITTED
+                                    </span>
+</td>
+<td class="px-6 py-4 text-sm font-bold tabular-numbers text-on-surface">$2,840.00</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant">Oct 12, 2023</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="px-3 py-1.5 text-xs font-bold text-[#137333] bg-[#e6f4ea] rounded hover:bg-[#ceead6] transition-colors">Approve</button>
+<button class="px-3 py-1.5 text-xs font-bold text-on-error-container bg-error-container rounded hover:bg-error-container/80 transition-colors">Reject</button>
+</div>
+</td>
+</tr>
+<!-- Row 2: APPROVED -->
+<tr class="group hover:bg-surface-container-high/50 transition-colors">
+<td class="px-6 py-4">
+<div class="flex flex-col">
+<span class="font-semibold text-on-surface text-sm">l.chen@precision.com</span>
+<span class="text-xs text-on-surface-variant">Engineering</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm font-medium text-on-surface">Cloud Infrastructure Audit</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-[#e6f4ea] text-[#137333]">
+                                        APPROVED
+                                    </span>
+</td>
+<td class="px-6 py-4 text-sm font-bold tabular-numbers text-on-surface">$14,200.50</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant">Oct 10, 2023</td>
+<td class="px-6 py-4 text-right">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 3: REJECTED -->
+<tr class="group hover:bg-surface-container-high/50 transition-colors">
+<td class="px-6 py-4">
+<div class="flex flex-col">
+<span class="font-semibold text-on-surface text-sm">s.rogers@precision.com</span>
+<span class="text-xs text-on-surface-variant">Marketing</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm font-medium text-on-surface">Client Entertainment - Gala</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-error-container text-on-error-container">
+                                        REJECTED
+                                    </span>
+</td>
+<td class="px-6 py-4 text-sm font-bold tabular-numbers text-on-surface">$450.00</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant">Oct 09, 2023</td>
+<td class="px-6 py-4 text-right">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg">history</span>
+</button>
+</td>
+</tr>
+<!-- Row 4: SUBMITTED -->
+<tr class="group hover:bg-surface-container-high/50 transition-colors">
+<td class="px-6 py-4">
+<div class="flex flex-col">
+<span class="font-semibold text-on-surface text-sm">d.miller@precision.com</span>
+<span class="text-xs text-on-surface-variant">Sales</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm font-medium text-on-surface">West Coast Regional Travel</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-fixed text-on-primary-fixed-variant">
+                                        SUBMITTED
+                                    </span>
+</td>
+<td class="px-6 py-4 text-sm font-bold tabular-numbers text-on-surface">$1,125.75</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant">Oct 08, 2023</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="px-3 py-1.5 text-xs font-bold text-[#137333] bg-[#e6f4ea] rounded hover:bg-[#ceead6] transition-colors">Approve</button>
+<button class="px-3 py-1.5 text-xs font-bold text-on-error-container bg-error-container rounded hover:bg-error-container/80 transition-colors">Reject</button>
+</div>
+</td>
+</tr>
+<!-- Row 5: APPROVED -->
+<tr class="group hover:bg-surface-container-high/50 transition-colors">
+<td class="px-6 py-4">
+<div class="flex flex-col">
+<span class="font-semibold text-on-surface text-sm">k.thompson@precision.com</span>
+<span class="text-xs text-on-surface-variant">Legal</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm font-medium text-on-surface">Annual Compliance Renewal</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-[#e6f4ea] text-[#137333]">
+                                        APPROVED
+                                    </span>
+</td>
+<td class="px-6 py-4 text-sm font-bold tabular-numbers text-on-surface">$3,400.00</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant">Oct 05, 2023</td>
+<td class="px-6 py-4 text-right">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="px-6 py-4 bg-surface-container-low/30 border-t border-outline-variant/10 flex items-center justify-between">
+<span class="text-xs font-medium text-on-surface-variant uppercase tracking-wider">Showing 5 of 142 reports</span>
+<div class="flex items-center gap-2">
+<button class="p-1.5 rounded hover:bg-surface-container-high disabled:opacity-30" disabled="">
+<span class="material-symbols-outlined text-sm">chevron_left</span>
+</button>
+<span class="text-xs font-bold text-primary">1</span>
+<span class="text-xs font-medium text-on-surface-variant">2</span>
+<span class="text-xs font-medium text-on-surface-variant">3</span>
+<button class="p-1.5 rounded hover:bg-surface-container-high">
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Secondary Insight Cards (Asymmetric Bento) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+<div class="bg-surface-container-low rounded-xl p-6 flex flex-col justify-between">
+<div>
+<span class="material-symbols-outlined text-primary mb-4">pending_actions</span>
+<h3 class="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-1">Pending Review</h3>
+<p class="text-2xl font-black text-on-surface tabular-numbers">24</p>
+</div>
+<p class="text-xs text-[#137333] mt-4 flex items-center gap-1 font-medium">
+<span class="material-symbols-outlined text-xs">trending_down</span>
+                            12% from last week
+                        </p>
+</div>
+<div class="bg-surface-container-low rounded-xl p-6 flex flex-col justify-between">
+<div>
+<span class="material-symbols-outlined text-primary mb-4">payments</span>
+<h3 class="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-1">Total Disbursed</h3>
+<p class="text-2xl font-black text-on-surface tabular-numbers">$248.3k</p>
+</div>
+<p class="text-xs text-on-surface-variant mt-4 flex items-center gap-1 font-medium">
+<span class="material-symbols-outlined text-xs">calendar_today</span>
+                            Fiscal Quarter 4
+                        </p>
+</div>
+<div class="bg-primary-container text-on-primary-container rounded-xl p-6 flex flex-col justify-between relative overflow-hidden">
+<div class="relative z-10">
+<h3 class="text-sm font-bold uppercase tracking-widest mb-2 opacity-80">Audit Completion</h3>
+<p class="text-3xl font-black tabular-numbers">92%</p>
+<div class="w-full h-1.5 bg-white/20 rounded-full mt-4">
+<div class="h-full bg-white rounded-full" style="width: 92%"></div>
+</div>
+</div>
+<div class="absolute -right-4 -bottom-4 opacity-10">
+<span class="material-symbols-outlined text-[8rem]" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Precision Ledger - Edit Expense</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-bright": "#f6fafe",
+                        "primary-fixed-dim": "#b0c6ff",
+                        "tertiary": "#7f2b00",
+                        "tertiary-container": "#a63b01",
+                        "on-secondary-fixed": "#0b1c30",
+                        "on-background": "#171c1f",
+                        "primary-fixed": "#d9e2ff",
+                        "inverse-primary": "#b0c6ff",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "error": "#ba1a1a",
+                        "on-primary-fixed": "#001945",
+                        "background": "#f6fafe",
+                        "tertiary-fixed-dim": "#ffb599",
+                        "secondary": "#505f76",
+                        "surface-container-low": "#f0f4f8",
+                        "tertiary-fixed": "#ffdbce",
+                        "on-primary": "#ffffff",
+                        "surface-variant": "#dfe3e7",
+                        "on-tertiary-fixed": "#370e00",
+                        "on-primary-fixed-variant": "#00419d",
+                        "inverse-surface": "#2c3134",
+                        "on-surface": "#171c1f",
+                        "outline-variant": "#c3c6d6",
+                        "on-surface-variant": "#424653",
+                        "error-container": "#ffdad6",
+                        "surface": "#f6fafe",
+                        "secondary-fixed-dim": "#b7c8e1",
+                        "surface-container-high": "#e4e9ed",
+                        "surface-container-highest": "#dfe3e7",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed": "#d3e4fe",
+                        "on-secondary-container": "#54647a",
+                        "outline": "#737785",
+                        "inverse-on-surface": "#edf1f5",
+                        "primary-container": "#0a58ca",
+                        "on-primary-container": "#ccd8ff",
+                        "primary": "#00429d",
+                        "surface-dim": "#d6dade",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#7f2b00",
+                        "secondary-container": "#d0e1fb",
+                        "on-tertiary": "#ffffff",
+                        "surface-tint": "#0958ca",
+                        "on-error-container": "#93000a",
+                        "surface-container": "#eaeef2",
+                        "on-error": "#ffffff",
+                        "on-tertiary-container": "#ffcebc"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .ai-highlight {
+            background-color: #fffde7;
+            border-bottom: 2px solid #fbc02d;
+        }
+        .ai-highlight:focus {
+            background-color: #ffffff;
+            border-bottom: 2px solid #00429d;
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface antialiased">
+<!-- Shell Layout -->
+<div class="flex min-h-screen overflow-hidden">
+<!-- SideNavBar -->
+<aside class="docked left-0 h-screen w-64 flex-shrink-0 bg-[#e4e9ed] dark:bg-slate-800 flex flex-col justify-between py-8 px-0 font-['Inter'] tracking-tight antialiased">
+<div class="space-y-8">
+<div class="px-6">
+<h1 class="text-xl font-bold tracking-tighter text-[#171c1f] dark:text-white">Precision Ledger</h1>
+<p class="text-xs font-medium text-[#424653] opacity-70">Expense Management</p>
+</div>
+<nav class="flex flex-col space-y-1">
+<a class="flex items-center px-6 py-3 border-l-4 border-[#00429d] text-[#00429d] font-semibold bg-transparent transition-all" href="#">
+<span class="material-symbols-outlined mr-4">description</span>
+                        Reports
+                    </a>
+<a class="flex items-center px-6 py-3 text-[#424653] dark:text-slate-400 font-medium hover:bg-[#f0f4f8] dark:hover:bg-slate-700 transition-all" href="#">
+<span class="material-symbols-outlined mr-4">analytics</span>
+                        All Reports
+                    </a>
+</nav>
+</div>
+<div class="px-4">
+<button class="w-full bg-gradient-to-br from-primary to-primary-container text-white py-3 rounded-lg font-semibold text-sm shadow-lg hover:scale-95 active:opacity-80 transition-transform">
+                    New Report
+                </button>
+<div class="mt-8 pt-8 border-t border-outline-variant/20">
+<a class="flex items-center px-4 py-3 text-[#424653] dark:text-slate-400 font-medium hover:bg-[#f0f4f8] transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined mr-4">logout</span>
+                        Logout
+                    </a>
+</div>
+</div>
+</aside>
+<!-- Main Workspace -->
+<main class="flex-1 flex flex-col min-w-0 bg-surface h-screen overflow-y-auto">
+<!-- TopAppBar -->
+<header class="flex items-center justify-between w-full px-8 py-4 sticky top-0 bg-[#f6fafe] dark:bg-slate-900 z-40">
+<div class="flex items-center gap-4">
+<h2 class="text-lg font-black text-[#00429d] dark:text-blue-500">The Precision Ledger</h2>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-sm">search</span>
+<input class="pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-full text-sm focus:ring-2 focus:ring-primary w-64 transition-all" placeholder="Search entries..." type="text"/>
+</div>
+<div class="flex items-center gap-3">
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="h-8 w-8 rounded-full overflow-hidden border-2 border-primary-container">
+<img alt="Administrator profile" class="h-full w-full object-cover" data-alt="Professional male administrator profile photo with clean background and neutral lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDcTnTxUgLLNI8b4FJU3BBJmrGV8T-wfz8Mfpy3x6UPbKoo9I3sveVnjLKLytGB241RIYlKXKub8NEPerAH-rfDmv4CM2DsezVMeIjhpZaOB91E6uI1t5z-Rg5NR5-oK0N1kbcUX08Eg4iTeuxQ6ppaMYr1VsCLfYyQDFE7aUX8CNYQXdQQdL7abOWbn23EFZ1rKEYqlDLFaG0jtZ7Wr770qdm6I78PKwzbLs3FFaGp_rPuUJteVgLR_968MOr_8PeHcKD5ZMCHZ7Yx"/>
+</div>
+</div>
+<button class="bg-primary text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-primary-container transition-colors">Submit Report</button>
+</div>
+</header>
+<!-- Dashboard Content (Backgrounded) -->
+<div class="p-8 space-y-8 blur-sm pointer-events-none opacity-40">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10">
+<p class="text-on-surface-variant text-xs font-bold tracking-widest uppercase mb-2">Total Expenses</p>
+<h3 class="text-4xl font-black text-on-surface tracking-tighter">$12,450.00</h3>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10">
+<p class="text-on-surface-variant text-xs font-bold tracking-widest uppercase mb-2">Pending Approval</p>
+<h3 class="text-4xl font-black text-on-surface tracking-tighter">8 Items</h3>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10">
+<p class="text-on-surface-variant text-xs font-bold tracking-widest uppercase mb-2">Top Category</p>
+<h3 class="text-4xl font-black text-on-surface tracking-tighter">Travel</h3>
+</div>
+</div>
+</div>
+<!-- MODAL OVERLAY -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-on-surface/40 backdrop-blur-sm">
+<!-- Modal Container -->
+<div class="bg-surface-container-lowest w-full max-w-4xl rounded-xl shadow-[0px_12px_32px_rgba(23,28,31,0.06)] overflow-hidden flex flex-col md:flex-row h-[921px] md:h-auto max-h-[850px]">
+<!-- Left Side: Receipt Preview -->
+<div class="w-full md:w-5/12 bg-surface-container-high p-8 flex flex-col justify-center items-center space-y-6">
+<div class="w-full aspect-[3/4] bg-white rounded-lg shadow-lg relative overflow-hidden group">
+<img class="w-full h-full object-cover" data-alt="High quality professional photograph of a paper business receipt on a dark slate background with dramatic lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCWoKUdLtEZ1KZT_7piS_btw9KbGkW0D1k7vpJi1OdWxTtS6U7aSLLm1zASruje2womcHElp4ZLwupMxiSjs4LzFWlFM-Om2jHgMEcvT33XohQD1ZAVQaUhPN4oJCoISN7t9G2LnONWPw9r_P6rlupahlK0wYdPaXDjuJGSflM-tyTv6bFo58pIXErRSeluNEPrPT0GpBhGf0rHNZij9J9hB4DLv-eqaQSjyTINu6Ckv_yPAgoBAyl5gA19dNMX6dx0G1A4TojCE4oB"/>
+<div class="absolute inset-0 bg-primary/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="bg-white text-primary px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-base">zoom_in</span> View Full Size
+                                </button>
+</div>
+</div>
+<div class="text-center">
+<p class="text-on-surface-variant text-xs font-bold uppercase tracking-wider mb-2">File Uploaded</p>
+<p class="text-on-surface font-semibold text-sm">receipt_hotel_san_fran.pdf</p>
+<button class="mt-4 text-primary text-xs font-bold flex items-center justify-center gap-1 mx-auto hover:underline">
+<span class="material-symbols-outlined text-sm">cloud_upload</span> Replace File
+                            </button>
+</div>
+</div>
+<!-- Right Side: Edit Form -->
+<div class="w-full md:w-7/12 flex flex-col">
+<!-- AI Banner -->
+<div class="bg-[#fff9c4] text-[#827717] px-8 py-3 flex items-center gap-3">
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+<span class="text-sm font-semibold">AI extracted — please review for accuracy</span>
+</div>
+<!-- Form Content -->
+<div class="p-8 flex-1 overflow-y-auto space-y-6">
+<div class="flex justify-between items-start">
+<div>
+<h2 class="text-2xl font-black text-on-surface tracking-tight">Edit Expense Item</h2>
+<p class="text-on-surface-variant text-sm mt-1">Review the details extracted from your receipt.</p>
+</div>
+<button class="text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<form class="space-y-6">
+<!-- Merchant Name -->
+<div class="space-y-1">
+<label class="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Merchant Name</label>
+<input class="w-full px-0 py-2 border-0 border-b-2 border-outline-variant bg-surface-container-low ai-highlight text-on-surface font-semibold focus:ring-0 text-lg transition-all" placeholder="e.g. Starbucks" type="text" value="Marriott Marquis San Francisco"/>
+</div>
+<div class="grid grid-cols-2 gap-6">
+<!-- Amount -->
+<div class="space-y-1">
+<label class="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Amount</label>
+<div class="relative">
+<input class="w-full px-0 py-2 border-0 border-b-2 border-outline-variant bg-surface-container-low ai-highlight text-on-surface font-semibold focus:ring-0 text-lg transition-all" style="font-family: 'JetBrains Mono', monospace;" type="text" value="452.12"/>
+</div>
+</div>
+<!-- Currency -->
+<div class="space-y-1">
+<label class="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Currency</label>
+<select class="w-full px-0 py-2 border-0 border-b-2 border-outline-variant bg-surface-container-low ai-highlight text-on-surface font-semibold focus:ring-0 text-lg appearance-none cursor-pointer">
+<option selected="">USD</option>
+<option>EUR</option>
+<option>GBP</option>
+<option>JPY</option>
+</select>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-6">
+<!-- Category -->
+<div class="space-y-1">
+<label class="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Category</label>
+<select class="w-full px-0 py-2 border-0 border-b-2 border-outline-variant bg-surface-container-low ai-highlight text-on-surface font-semibold focus:ring-0 text-base appearance-none cursor-pointer">
+<option selected="">Travel &amp; Lodging</option>
+<option>Meals &amp; Entertainment</option>
+<option>Office Supplies</option>
+<option>Technology</option>
+</select>
+</div>
+<!-- Date -->
+<div class="space-y-1">
+<label class="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Transaction Date</label>
+<input class="w-full px-0 py-2 border-0 border-b-2 border-outline-variant bg-surface-container-low ai-highlight text-on-surface font-semibold focus:ring-0 text-base transition-all" type="date" value="2023-11-14"/>
+</div>
+</div>
+<!-- Description (Not extracted usually, so standard style) -->
+<div class="space-y-1">
+<label class="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Description (Optional)</label>
+<textarea class="w-full px-0 py-2 border-0 border-b-2 border-outline-variant bg-surface-container-low text-on-surface font-medium focus:ring-0 focus:border-primary text-base placeholder:text-outline/50 transition-all" placeholder="Add notes about this transaction..." rows="2"></textarea>
+</div>
+</form>
+</div>
+<!-- Footer Actions -->
+<div class="p-8 bg-surface-container-low flex items-center justify-between">
+<button class="text-on-surface-variant font-bold text-sm hover:text-on-surface transition-colors">Discard</button>
+<div class="flex gap-4">
+<button class="px-6 py-2 rounded-lg font-bold text-sm border border-outline text-on-surface hover:bg-surface-container-lowest transition-colors">Save as Draft</button>
+<button class="px-6 py-2 rounded-lg font-bold text-sm bg-gradient-to-br from-primary to-primary-container text-white shadow-lg hover:scale-95 active:opacity-80 transition-transform">Confirm Expense</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

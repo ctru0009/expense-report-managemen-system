@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-bright": "#f6fafe",
+                    "primary-fixed-dim": "#b0c6ff",
+                    "tertiary": "#7f2b00",
+                    "tertiary-container": "#a63b01",
+                    "on-secondary-fixed": "#0b1c30",
+                    "on-background": "#171c1f",
+                    "primary-fixed": "#d9e2ff",
+                    "inverse-primary": "#b0c6ff",
+                    "on-secondary-fixed-variant": "#38485d",
+                    "error": "#ba1a1a",
+                    "on-primary-fixed": "#001945",
+                    "background": "#f6fafe",
+                    "tertiary-fixed-dim": "#ffb599",
+                    "secondary": "#505f76",
+                    "surface-container-low": "#f0f4f8",
+                    "tertiary-fixed": "#ffdbce",
+                    "on-primary": "#ffffff",
+                    "surface-variant": "#dfe3e7",
+                    "on-tertiary-fixed": "#370e00",
+                    "on-primary-fixed-variant": "#00419d",
+                    "inverse-surface": "#2c3134",
+                    "on-surface": "#171c1f",
+                    "outline-variant": "#c3c6d6",
+                    "on-surface-variant": "#424653",
+                    "error-container": "#ffdad6",
+                    "surface": "#f6fafe",
+                    "secondary-fixed-dim": "#b7c8e1",
+                    "surface-container-high": "#e4e9ed",
+                    "surface-container-highest": "#dfe3e7",
+                    "on-secondary": "#ffffff",
+                    "secondary-fixed": "#d3e4fe",
+                    "on-secondary-container": "#54647a",
+                    "outline": "#737785",
+                    "inverse-on-surface": "#edf1f5",
+                    "primary-container": "#0a58ca",
+                    "on-primary-container": "#ccd8ff",
+                    "primary": "#00429d",
+                    "surface-dim": "#d6dade",
+                    "surface-container-lowest": "#ffffff",
+                    "on-tertiary-fixed-variant": "#7f2b00",
+                    "secondary-container": "#d0e1fb",
+                    "on-tertiary": "#ffffff",
+                    "surface-tint": "#0958ca",
+                    "on-error-container": "#93000a",
+                    "surface-container": "#eaeef2",
+                    "on-error": "#ffffff",
+                    "on-tertiary-container": "#ffcebc"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Inter"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .tabular-nums {
+            font-variant-numeric: tabular-nums;
+        }
+        .primary-gradient {
+            background: linear-gradient(135deg, #00429d 0%, #0a58ca 100%);
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface flex min-h-screen">
+<!-- SideNavBar Component -->
+<aside class="docked left-0 h-screen w-64 flex-shrink-0 bg-[#e4e9ed] dark:bg-slate-800 flex flex-col justify-between py-8 px-0 font-['Inter'] tracking-tight antialiased">
+<div class="flex flex-col gap-8">
+<div class="px-6 flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-sm" data-icon="account_balance_wallet">account_balance_wallet</span>
+</div>
+<div>
+<h1 class="text-xl font-bold tracking-tighter text-[#171c1f] dark:text-white">Precision Ledger</h1>
+<p class="text-[10px] text-on-surface-variant leading-none uppercase tracking-widest font-semibold">Expense Management</p>
+</div>
+</div>
+<nav class="flex flex-col gap-1">
+<a class="flex items-center gap-3 py-3 px-6 text-[#424653] dark:text-slate-400 font-medium hover:bg-[#f0f4f8] dark:hover:bg-slate-700 transition-all active:opacity-80 scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span>Reports</span>
+</a>
+<a class="flex items-center gap-3 py-3 px-6 border-l-4 border-[#00429d] text-[#00429d] font-semibold bg-transparent transition-all active:opacity-80 scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span>All Reports</span>
+</a>
+</nav>
+</div>
+<div class="flex flex-col gap-4">
+<div class="px-6">
+<button class="w-full primary-gradient text-white py-3 px-4 rounded-lg flex items-center justify-center gap-2 font-semibold shadow-sm hover:opacity-90 transition-opacity active:scale-95">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+<span>New Report</span>
+</button>
+</div>
+<nav class="flex flex-col border-t border-outline-variant/10 pt-4">
+<a class="flex items-center gap-3 py-3 px-6 text-[#424653] dark:text-slate-400 font-medium hover:bg-[#f0f4f8] dark:hover:bg-slate-700 transition-all active:opacity-80 scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span>Logout</span>
+</a>
+</nav>
+</div>
+</aside>
+<div class="flex-1 flex flex-col min-w-0">
+<!-- TopAppBar Component -->
+<header class="flex items-center justify-between w-full px-8 py-4 sticky top-0 bg-[#f6fafe] dark:bg-slate-900 z-40 font-['Inter'] font-semibold">
+<div class="flex items-center gap-4">
+<span class="text-lg font-black text-[#00429d] dark:text-blue-500">The Precision Ledger</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg" data-icon="search">search</span>
+<input class="bg-surface-container-low border-none rounded-full pl-10 pr-4 py-2 text-sm w-64 focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest transition-all" placeholder="Search report items..." type="text"/>
+</div>
+<div class="flex items-center gap-4 text-[#424653] dark:text-slate-400">
+<button class="hover:text-[#0a58ca] dark:hover:text-blue-300 transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="hover:text-[#0a58ca] dark:hover:text-blue-300 transition-colors">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</div>
+<div class="flex items-center gap-3 pl-4 border-l border-outline-variant/20">
+<img alt="Administrator profile" class="w-8 h-8 rounded-full object-cover" data-alt="Professional portrait of a male corporate administrator in a dark suit against a soft blurred office background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6LYGdn88Q-d_PH2ZFw09KwahRCCHyGZj1chQO_z-9Oc0V_UOcEP2J3g7-oCEVvrqYtBIv8cJcHHhkqUnQCgnBz67eKp0Vg5di0xPihCpYJrt1XfGox2SXsCLkoORiVzk7fjZLJ53IUGZFaHSmr2pPPSBzUPxkdpP1L3oFWAYb0QJ25HtABTl1ox3qYoZaif96J7TL0wdVkuz2iIyU_B4RM4uU5Cf44fFFwcdOl1mb7b2p9UoWre0THRFVA9lWMGg_DwKzZnxk1dj2"/>
+<div class="flex flex-col items-start leading-none">
+<span class="text-xs font-bold text-on-surface">Alex Mercer</span>
+<span class="text-[10px] text-on-surface-variant">Admin Access</span>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Workspace -->
+<main class="flex-1 p-8 bg-surface space-y-8 max-w-7xl mx-auto w-full">
+<!-- Report Header Section -->
+<section class="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pb-2">
+<div class="space-y-4">
+<nav class="flex items-center gap-2 text-on-surface-variant text-xs font-medium tracking-wide uppercase">
+<a class="hover:text-primary transition-colors" href="#">Reports</a>
+<span class="material-symbols-outlined text-[14px]" data-icon="chevron_right">chevron_right</span>
+<span class="text-on-surface">Q3 Business Trip - London</span>
+</nav>
+<div class="flex flex-col gap-2">
+<div class="flex items-center gap-3">
+<h2 class="text-4xl font-extrabold tracking-tight text-on-surface">Q3 Business Trip - London</h2>
+<span class="px-3 py-1 bg-secondary-container text-on-secondary-container text-[11px] font-bold tracking-widest uppercase rounded-full">DRAFT</span>
+</div>
+<p class="text-on-surface-variant font-medium">Expenses incurred during the annual strategic partnership summit.</p>
+</div>
+</div>
+<div class="flex flex-col items-end gap-4">
+<div class="flex flex-col items-end">
+<span class="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest">Calculated Total</span>
+<span class="text-4xl font-black text-primary tabular-nums tracking-tighter">£ 12,450.80</span>
+</div>
+<div class="flex items-center gap-3">
+<button class="px-6 py-2.5 rounded-lg border-2 border-primary text-primary font-bold text-sm hover:bg-primary/5 transition-colors active:scale-95">
+                            Save Draft
+                        </button>
+<button class="px-8 py-2.5 rounded-lg primary-gradient text-white font-bold text-sm shadow-lg shadow-primary/20 hover:opacity-90 transition-all active:scale-95 flex items-center gap-2">
+                            Submit Report
+                            <span class="material-symbols-outlined text-sm" data-icon="send">send</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Stats/Bento Grid -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/10 shadow-sm flex flex-col justify-between h-32">
+<span class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Report ID</span>
+<span class="text-xl font-bold text-on-surface tracking-tight">EXP-2023-0092</span>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/10 shadow-sm flex flex-col justify-between h-32">
+<span class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Total Items</span>
+<div class="flex items-end gap-2">
+<span class="text-3xl font-black text-on-surface">24</span>
+<span class="text-on-surface-variant text-sm font-medium mb-1">Receipts verified</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/10 shadow-sm flex flex-col justify-between h-32">
+<span class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Created Date</span>
+<span class="text-xl font-bold text-on-surface tracking-tight">Oct 12, 2023</span>
+</div>
+</section>
+<!-- Expense Items Table -->
+<section class="bg-surface-container-lowest rounded-xl border border-outline-variant/10 shadow-sm overflow-hidden">
+<div class="p-6 flex items-center justify-between border-b border-outline-variant/5">
+<h3 class="text-lg font-bold text-on-surface tracking-tight">Expense Line Items</h3>
+<button class="flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-container-low text-primary font-bold text-xs hover:bg-surface-container-high transition-colors active:scale-95">
+<span class="material-symbols-outlined text-sm" data-icon="add_circle">add_circle</span>
+                        Add Item
+                    </button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low/50">
+<th class="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Merchant</th>
+<th class="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Date</th>
+<th class="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Category</th>
+<th class="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Currency</th>
+<th class="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Amount</th>
+<th class="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest text-center">Receipt</th>
+<th class="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/5">
+<!-- Item 1 -->
+<tr class="hover:bg-surface-container-high/30 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="flight">flight</span>
+</div>
+<span class="font-bold text-on-surface">British Airways</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant tabular-nums">12 Oct 2023</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-surface-container-high text-on-surface-variant text-[10px] font-bold uppercase tracking-wider rounded">Travel</span>
+</td>
+<td class="px-6 py-4 text-sm font-semibold text-on-surface-variant">GBP</td>
+<td class="px-6 py-4 font-black text-on-surface tabular-nums">2,450.00</td>
+<td class="px-6 py-4">
+<div class="flex justify-center">
+<img alt="Receipt thumbnail" class="w-10 h-10 rounded object-cover cursor-zoom-in hover:ring-2 hover:ring-primary transition-all shadow-sm" data-alt="Close up scan of a professional flight invoice with British Airways branding on white paper" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA2Y0nx-O6tVe0JKQ1oPC19gVTEiR-Uk6MyhoO_6Deh_IGZVz8kvaut9-1hc3Y5HJ9OrfJWCXLioiYTykiRyxI7szFj0XQyZtUaEZ7IMycmmuI1vIxGa10eui728O-NTX-hs8p7SGY73fzedyYb6nOrFVbf8f9hsqBhDAPG-E1fCZUCz-bD0fJqghvcurz7zWsijY9D12BUjqmt9gv8Zu2aIAzPt97A7V7oQf1z23E7luX5BFxBg3vKy4BFzWgN3yNz56vUR8xylCnw"/>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg" data-icon="edit">edit</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-lg" data-icon="delete">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Item 2 -->
+<tr class="hover:bg-surface-container-high/30 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="hotel">hotel</span>
+</div>
+<span class="font-bold text-on-surface">The Savoy London</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant tabular-nums">14 Oct 2023</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-surface-container-high text-on-surface-variant text-[10px] font-bold uppercase tracking-wider rounded">Lodging</span>
+</td>
+<td class="px-6 py-4 text-sm font-semibold text-on-surface-variant">GBP</td>
+<td class="px-6 py-4 font-black text-on-surface tabular-nums">4,890.50</td>
+<td class="px-6 py-4">
+<div class="flex justify-center">
+<img alt="Receipt thumbnail" class="w-10 h-10 rounded object-cover cursor-zoom-in hover:ring-2 hover:ring-primary transition-all shadow-sm" data-alt="Digital hotel invoice on a laptop screen with clear typography and Savoy hotel branding" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA6JsN51IXfNttFR1JOHkDHJi-M4i3lLUGT__Z4JMPRNcJZeUTQkDe2giHGOkj23hMVcTNtS1d-KoFfFiZj7RR27WPdHbAzKBz7FlsxNe-ePhWycUN1hQ4V90R-S_yAgiJoYpxTmbxRHakVIRo62LV7W5HFbxiQroM5xh8rJ9vlao9Tx4ec2IyIjPQzwZ0qjFmL9m_PsAQAPb9zWW0UE28Bu_I-lK-SGesyPcMoIA_tRnjNtNYNtCAf3NkFWttw6CoBs8eD3Pj9xapZ"/>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg" data-icon="edit">edit</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-lg" data-icon="delete">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Item 3 -->
+<tr class="hover:bg-surface-container-high/30 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="restaurant">restaurant</span>
+</div>
+<span class="font-bold text-on-surface">Sketch Mayfair</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant tabular-nums">15 Oct 2023</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-surface-container-high text-on-surface-variant text-[10px] font-bold uppercase tracking-wider rounded">Meals</span>
+</td>
+<td class="px-6 py-4 text-sm font-semibold text-on-surface-variant">GBP</td>
+<td class="px-6 py-4 font-black text-on-surface tabular-nums">1,210.30</td>
+<td class="px-6 py-4">
+<div class="flex justify-center">
+<img alt="Receipt thumbnail" class="w-10 h-10 rounded object-cover cursor-zoom-in hover:ring-2 hover:ring-primary transition-all shadow-sm" data-alt="Crumpled restaurant receipt resting on a dark wooden table with elegant typography visible" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD3FI7QoExWGkmE__0MvP77-VcUDIu_obk10pf7WeD6cUek8DzI4I-k5N1xrGfAzkMid8aI-vp1MX97VLj9zZbTkS590emfeAcrsywxXihaAMstbn2kvBAtjtuErGaiVExqxNnvFeAeRWP4oBBfoMgFJxshiBSif_4FAGr5YnLpeWg0wJ2b9Sby3VJzvqQ6oiajRmnL7W66aEhc-6GtMBuitPhX7nO1cytyp6nwnmqwLNBc6Z6e8rDU0TIvM4A2eEaUT988GvWsfUpE"/>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg" data-icon="edit">edit</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-lg" data-icon="delete">delete</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-6 bg-surface-container-low/30 flex justify-between items-center">
+<span class="text-xs font-semibold text-on-surface-variant">Showing 3 of 24 items</span>
+<div class="flex items-center gap-1">
+<button class="p-1 rounded hover:bg-surface-container-high transition-colors text-on-surface-variant disabled:opacity-30">
+<span class="material-symbols-outlined" data-icon="keyboard_arrow_left">keyboard_arrow_left</span>
+</button>
+<span class="px-3 text-xs font-bold text-on-surface">1</span>
+<button class="p-1 rounded hover:bg-surface-container-high transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="keyboard_arrow_right">keyboard_arrow_right</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Bottom Floating Action for Quick Add (Contextual) -->
+<div class="fixed bottom-8 right-8">
+<button class="w-16 h-16 rounded-full primary-gradient text-white shadow-2xl shadow-primary/40 flex items-center justify-center hover:scale-105 transition-transform active:scale-95 group relative">
+<span class="material-symbols-outlined text-3xl" data-icon="add" style="font-variation-settings: 'FILL' 1;">add</span>
+<span class="absolute right-full mr-4 bg-inverse-surface text-inverse-on-surface px-3 py-1.5 rounded text-xs font-bold whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">Add New Expense</span>
+</button>
+</div>
+</main>
+</div>
+</body></html>

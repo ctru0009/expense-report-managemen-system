@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Login | The Precision Ledger</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-bright": "#f6fafe",
+                      "primary-fixed-dim": "#b0c6ff",
+                      "tertiary": "#7f2b00",
+                      "tertiary-container": "#a63b01",
+                      "on-secondary-fixed": "#0b1c30",
+                      "on-background": "#171c1f",
+                      "primary-fixed": "#d9e2ff",
+                      "inverse-primary": "#b0c6ff",
+                      "on-secondary-fixed-variant": "#38485d",
+                      "error": "#ba1a1a",
+                      "on-primary-fixed": "#001945",
+                      "background": "#f6fafe",
+                      "tertiary-fixed-dim": "#ffb599",
+                      "secondary": "#505f76",
+                      "surface-container-low": "#f0f4f8",
+                      "tertiary-fixed": "#ffdbce",
+                      "on-primary": "#ffffff",
+                      "surface-variant": "#dfe3e7",
+                      "on-tertiary-fixed": "#370e00",
+                      "on-primary-fixed-variant": "#00419d",
+                      "inverse-surface": "#2c3134",
+                      "on-surface": "#171c1f",
+                      "outline-variant": "#c3c6d6",
+                      "on-surface-variant": "#424653",
+                      "error-container": "#ffdad6",
+                      "surface": "#f6fafe",
+                      "secondary-fixed-dim": "#b7c8e1",
+                      "surface-container-high": "#e4e9ed",
+                      "surface-container-highest": "#dfe3e7",
+                      "on-secondary": "#ffffff",
+                      "secondary-fixed": "#d3e4fe",
+                      "on-secondary-container": "#54647a",
+                      "outline": "#737785",
+                      "inverse-on-surface": "#edf1f5",
+                      "primary-container": "#0a58ca",
+                      "on-primary-container": "#ccd8ff",
+                      "primary": "#00429d",
+                      "surface-dim": "#d6dade",
+                      "surface-container-lowest": "#ffffff",
+                      "on-tertiary-fixed-variant": "#7f2b00",
+                      "secondary-container": "#d0e1fb",
+                      "on-tertiary": "#ffffff",
+                      "surface-tint": "#0958ca",
+                      "on-error-container": "#93000a",
+                      "surface-container": "#eaeef2",
+                      "on-error": "#ffffff",
+                      "on-tertiary-container": "#ffcebc"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "fontFamily": {
+                      "headline": ["Inter"],
+                      "body": ["Inter"],
+                      "label": ["Inter"]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .form-input-ledger:focus {
+            outline: none;
+            border-bottom-width: 2px;
+            --tw-border-opacity: 1;
+            border-color: #00429d;
+            background-color: #ffffff;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed">
+<main class="min-h-screen flex flex-col md:flex-row overflow-hidden">
+<!-- Branding Section (Asymmetric Architectural Anchor) -->
+<section class="hidden md:flex md:w-1/2 lg:w-3/5 bg-surface-container-high relative flex-col justify-between p-16 overflow-hidden">
+<!-- Decorative Architectural Element -->
+<div class="absolute -top-24 -left-24 w-96 h-96 bg-primary opacity-5 rounded-full blur-3xl"></div>
+<div class="absolute bottom-0 right-0 w-full h-1/2 bg-gradient-to-t from-surface-container-highest to-transparent opacity-40"></div>
+<div class="relative z-10">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-primary flex items-center justify-center rounded-lg shadow-sm">
+<span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">account_balance</span>
+</div>
+<span class="text-xl font-black tracking-tighter text-primary">The Precision Ledger</span>
+</div>
+</div>
+<div class="relative z-10 max-w-lg">
+<h1 class="text-4xl lg:text-5xl font-extrabold text-on-surface tracking-tight mb-6 leading-tight">
+                    Institutional clarity for <span class="text-primary">enterprise expenses.</span>
+</h1>
+<p class="text-on-surface-variant text-lg leading-relaxed font-medium">
+                    Experience the architectural anchor of modern financial management. Secure, precise, and built for high-stakes ledger control.
+                </p>
+</div>
+<div class="relative z-10 flex gap-12">
+<div>
+<div class="text-xs uppercase tracking-widest text-on-surface-variant font-bold mb-2">Platform Stability</div>
+<div class="text-2xl font-bold tabular-nums text-on-surface">99.99%</div>
+</div>
+<div>
+<div class="text-xs uppercase tracking-widest text-on-surface-variant font-bold mb-2">Processed Monthly</div>
+<div class="text-2xl font-bold tabular-nums text-on-surface">$2.4B+</div>
+</div>
+</div>
+<!-- Architectural Backdrop Image -->
+<div class="absolute inset-0 z-0 opacity-20 pointer-events-none">
+<img class="w-full h-full object-cover grayscale" data-alt="monochrome architectural detail of a modern glass skyscraper with sharp lines and deep shadows under bright daylight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDor4Cel6TtSgJgFkFrAbvrkzgdZ09cHFBSDp5lc63Ik4XLtzxL79WWr9sXn81AlHNbpO-3qQy1zPgzqB1SfMDwxglqQwZWi90Id_j7U1PGNynGa_2i-aQftAP3sLtsDNLUK768iLn2fxEFTG4LgXaThRD_zq46CX_TnFKCfbBJrFQUO6-OQFznQG7tySyysNkjMaj_rX21kYdG82rOXo8x2v1Gqg8OPNPCCOrDyNAWqME7cGRoup-oXZ7Fg7UPB7u-xa6NYeRj3c7u"/>
+</div>
+</section>
+<!-- Login Canvas Section -->
+<section class="flex-1 bg-surface flex items-center justify-center p-6 md:p-12 lg:p-24 relative">
+<!-- Mobile Logo -->
+<div class="absolute top-8 left-8 md:hidden">
+<div class="flex items-center gap-2">
+<span class="text-lg font-black tracking-tighter text-primary">The Precision Ledger</span>
+</div>
+</div>
+<div class="w-full max-w-md">
+<div class="mb-12">
+<h2 class="text-3xl font-bold text-on-surface tracking-tight mb-2">Welcome Back</h2>
+<p class="text-on-surface-variant font-medium">Access your expense management terminal.</p>
+</div>
+<form action="#" class="space-y-8" method="POST">
+<!-- Email Field -->
+<div class="space-y-2">
+<label class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant px-1" for="email">
+                            Email Address
+                        </label>
+<div class="relative">
+<input class="form-input-ledger w-full bg-surface-container-low border-0 border-b border-outline-variant px-4 py-4 text-on-surface font-medium transition-all duration-200" id="email" name="email" placeholder="name@company.com" required="" type="email"/>
+</div>
+</div>
+<!-- Password Field -->
+<div class="space-y-2">
+<div class="flex justify-between items-center px-1">
+<label class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant" for="password">
+                                Password
+                            </label>
+<a class="text-xs font-bold text-primary hover:text-primary-container transition-colors" href="#">Forgot Password?</a>
+</div>
+<div class="relative">
+<input class="form-input-ledger w-full bg-surface-container-low border-0 border-b border-outline-variant px-4 py-4 text-on-surface font-medium transition-all duration-200" id="password" name="password" placeholder="••••••••" required="" type="password"/>
+</div>
+</div>
+<!-- Persistence Toggle -->
+<div class="flex items-center space-x-3 px-1">
+<input class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary-container bg-surface-container-low" id="remember" name="remember" type="checkbox"/>
+<label class="text-sm font-medium text-on-surface-variant select-none" for="remember">
+                            Keep me logged in for 30 days
+                        </label>
+</div>
+<!-- Submit Action -->
+<div class="pt-4">
+<button class="w-full py-4 bg-gradient-to-br from-primary to-primary-container text-on-primary font-bold rounded-md shadow-md hover:shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2" type="submit">
+<span>Login to Dashboard</span>
+<span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</form>
+<!-- Footer Links -->
+<div class="mt-12 text-center">
+<p class="text-on-surface-variant font-medium">
+                        New to the ledger? 
+                        <a class="text-primary font-bold hover:underline underline-offset-4 decoration-2 transition-all" href="#">
+                            Create an account
+                        </a>
+</p>
+</div>
+<!-- Compliance Footer -->
+<div class="mt-24 pt-8 border-t border-outline-variant border-opacity-10">
+<div class="flex flex-wrap justify-center gap-6 text-[10px] font-bold uppercase tracking-widest text-outline">
+<a class="hover:text-on-surface-variant transition-colors" href="#">Privacy Policy</a>
+<a class="hover:text-on-surface-variant transition-colors" href="#">Security Standards</a>
+<a class="hover:text-on-surface-variant transition-colors" href="#">SOC2 Compliance</a>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Visual Polish: Soft Ambient Gradient -->
+<div class="fixed top-0 right-0 w-1/3 h-1/3 bg-primary opacity-[0.02] blur-[120px] pointer-events-none"></div>
+</body></html>
