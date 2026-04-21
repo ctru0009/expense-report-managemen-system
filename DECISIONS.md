@@ -74,6 +74,20 @@ Backend and frontend are separate directories with their own `package.json` file
 
 **Why:** For a 2-app project, workspace tooling adds configuration overhead with no real benefit. Docker Compose handles orchestration.
 
+## 10. Docker Compose: Health Check for Postgres Startup
+
+The backend `depends_on` Postgres with `condition: service_healthy` using a `pg_isready` health check, not just a bare `depends_on`.
+
+**Why:** A bare `depends_on` only waits for the container process to start — it does not wait for Postgres to finish initialization and accept connections. On a fresh volume (first `docker-compose up`), Postgres runs `initdb`, creates the database, then restarts. The backend's `prisma migrate deploy` would race ahead and fail with `P1001: Can't reach database server`. The health check ensures the backend only starts once Postgres is truly ready.
+
+**Trade-off:** Adds ~5s to startup on fresh volumes while the health check polls. Negligible on subsequent starts.
+
+## 11. Docker Compose: OpenSSL in Alpine Image
+
+The backend Dockerfile installs `openssl` via `apk add --no-cache openssl` before `npm ci`.
+
+**Why:** Prisma's query engine is a native binary that links against `libssl`. The `node:20-alpine` image ships without OpenSSL, causing `prisma migrate deploy` to crash at runtime with `Error: Could not parse schema engine response`. This is a known Prisma-on-Alpine issue.
+
 ---
 
 ## If I Had One More Day
