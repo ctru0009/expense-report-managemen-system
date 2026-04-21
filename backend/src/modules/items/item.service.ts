@@ -1,8 +1,9 @@
-import { PrismaClient, Category } from '@prisma/client';
+import { Category } from '@prisma/client';
 import { prisma } from '../../config/prisma';
-import { NotFoundError, ForbiddenError, StateTransitionError } from '../../common/errors';
+import { NotFoundError, StateTransitionError } from '../../common/errors';
 import { canEditItems } from '../reports/report-state-machine';
 import { findOwnedReport } from '../reports/report.utils';
+import { recomputeTotal } from './item.utils';
 
 export async function listByReport(reportId: string, userId: string) {
   await findOwnedReport(prisma, reportId, userId);
@@ -114,14 +115,3 @@ export async function remove(itemId: string, reportId: string, userId: string) {
   });
 }
 
-async function recomputeTotal(reportId: string, tx: Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>) {
-  const result = await tx.expenseItem.aggregate({
-    where: { reportId },
-    _sum: { amount: true },
-  });
-
-  await tx.expenseReport.update({
-    where: { id: reportId },
-    data: { totalAmount: result._sum.amount ?? 0 },
-  });
-}
