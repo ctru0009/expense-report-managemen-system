@@ -58,10 +58,10 @@
 - [x] Edit guards: canEditItems and canEditMetadata allow DRAFT + REJECTED (per spec: "user regains edit rights")
 
 **Remaining unit tests (not blocking but should be added before Phase 6):**
-- [ ] Unit tests for total amount recomputation (add item, update item amount, delete item, multiple items sum)
-- [ ] Unit tests for item CRUD locked by report status (edit/create/delete blocked in SUBMITTED/APPROVED, allowed in DRAFT/REJECTED)
-- [ ] Unit tests for delete-only-in-DRAFT rule
-- [ ] Unit tests for report ownership (user cannot access/modify another user's report)
+- [x] Unit tests for total amount recomputation (add item, update item amount, delete item, multiple items sum)
+- [x] Unit tests for item CRUD locked by report status (edit/create/delete blocked in SUBMITTED/APPROVED, allowed in DRAFT/REJECTED)
+- [x] Unit tests for delete-only-in-DRAFT rule
+- [x] Unit tests for report ownership (user cannot access/modify another user's report)
 
 ### 3b: Frontend Report UI
 - [x] Report list page (with status filter tabs)
