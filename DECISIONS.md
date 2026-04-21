@@ -2,17 +2,17 @@
 
 ## Stack Choice
 
-| Layer | Choice | Why |
-|---|---|---|
-| Runtime | Node.js 20 LTS | Widely known, fast to scaffold, excellent TypeScript support |
-| Framework | Express | Minimal overhead, large ecosystem, easy to structure cleanly |
-| ORM | Prisma | Type-safe queries, excellent migration tooling, less boilerplate than TypeORM |
-| Database | PostgreSQL | Relational domain (reports → items), strong ACID guarantees, free via Docker |
-| Frontend | React + Vite + Tailwind | Vite is instant to start, Tailwind eliminates CSS decision fatigue, React is the widest-known option |
-| Testing | Jest + Supertest | Standard Node.js testing, Supertest for HTTP-level integration tests |
-| Auth | JWT + bcrypt | Spec requires JWT; bcrypt for hashing. Simple, no session store needed. |
-| File storage | Local filesystem via multer | Spec explicitly says local mount is fine. No cloud dependency. |
-| AI extraction | OpenAI API (mockable) | Standard LLM API, easy to mock in tests. |
+**Node.js over Go/Java/.NET:** The spec lists all as acceptable. Node wins here because: (1) one language across the stack reduces context-switching in a time-boxed exercise, (2) Prisma is the most productive TypeScript ORM available — no Go or Java ORM matches its developer experience for schema-first modeling, and (3) Express + TypeScript is fast to scaffold with minimal boilerplate. Go would be a better choice for raw throughput or concurrency, but this domain is CRUD-heavy with no performance-sensitive paths.
+
+**Express over Fastify/NestJS:** Fastify is faster at the benchmark level but the difference is irrelevant at this scale. NestJS over-engineers a 6-hour project with decorators, modules, and DI ceremony. Express with a clean folder structure achieves the same separation of concerns with less abstraction.
+
+**Prisma over TypeORM:** Prisma's schema-first approach (`schema.prisma` → generated client) produces type-safe queries with zero boilerplate. TypeORM's decorator-based entities and `find*` methods require more code for the same result, and its migration story is less reliable. For a domain with clear relationships (User → Report → Item) and computed fields, Prisma's transaction API is cleaner.
+
+**React over Vue:** Both are listed in the spec. React was chosen because the component model (JSX) maps more naturally to the Stitch-exported HTML prototypes — copy-paste HTML into JSX, add state. Vue's template syntax adds a translation step. For an exercise where speed matters, less translation = fewer bugs.
+
+**Vite over Create React App / Webpack:** CRA is deprecated. Webpack configs are a time sink. Vite needs zero config for React + TypeScript and starts instantly.
+
+**Tailwind CSS:** Eliminates the naming/organization decisions of traditional CSS. For a 6-hour exercise, not debating BEM vs CSS Modules vs styled-components is a real time saving. The Stitch design system's tonal palette maps directly to Tailwind custom colors.
 
 ## Key Design Decisions
 
