@@ -45,13 +45,23 @@
 ### 3a: Backend Reports + Items
 - [x] Prisma ExpenseReport + ExpenseItem models + migration
 - [x] ReportService with state machine validation
-- [x] Unit tests for state machine (all transitions + invalid transitions)
+- [x] Unit tests for state machine (all transitions + invalid transitions + guard functions)
 - [x] Report CRUD routes (create, read own, update, delete)
-- [x] Report submit endpoint (DRAFT → SUBMITTED)
+- [x] Report submit endpoint (DRAFT → SUBMITTED, validates non-empty)
 - [x] Report reopen endpoint (REJECTED → DRAFT, explicit user action)
-- [x] Item CRUD routes (create, read, update, delete — DRAFT status only)
+- [x] Item CRUD routes (create, read, update, delete — DRAFT/REJECTED status only)
 - [x] Total amount recomputation in transaction
 - [x] List with status filter (no pagination)
+- [x] findOwnedReport utility with ownership check and optional include param
+- [x] Single-query getById (items included via findOwnedReport include param)
+- [x] State machine throws StateTransitionError/ValidationError (not plain Error) for proper HTTP status mapping
+- [x] Edit guards: canEditItems and canEditMetadata allow DRAFT + REJECTED (per spec: "user regains edit rights")
+
+**Remaining unit tests (not blocking but should be added before Phase 6):**
+- [ ] Unit tests for total amount recomputation (add item, update item amount, delete item, multiple items sum)
+- [ ] Unit tests for item CRUD locked by report status (edit/create/delete blocked in SUBMITTED/APPROVED, allowed in DRAFT/REJECTED)
+- [ ] Unit tests for delete-only-in-DRAFT rule
+- [ ] Unit tests for report ownership (user cannot access/modify another user's report)
 
 ### 3b: Frontend Report UI
 - [x] Report list page (with status filter tabs)
@@ -67,13 +77,18 @@
 
 **Sequential — depends on Phase 3.**
 
-- [ ] Multer config for file uploads
-- [ ] POST receipt upload endpoint (save file, store path)
-- [ ] OpenAI integration: send image/PDF, extract merchant/amount/currency/date
-- [ ] Return extracted data in upload response
-- [ ] Frontend: receipt upload button on item form
-- [ ] Frontend: loading state during extraction
-- [ ] Frontend: pre-fill form with extracted data (editable override)
+### 4a: Backend Receipt Upload + AI Extraction
+- [ ] Multer config for file uploads (PDF, PNG, JPG, WEBP; max 10MB)
+- [ ] `POST /api/reports/:reportId/items/:id/receipt` — save file to `backend/uploads/`, store path on `item.receiptUrl`
+- [ ] OpenAI integration: send image/PDF to GPT-4o-mini, extract merchant_name, amount, currency, transaction_date
+- [ ] Return extracted data in upload response alongside updated item
+- [ ] Mock extraction service for development (returns static data when `OPENAI_API_KEY=dummy`)
+
+### 4b: Frontend Receipt UI
+- [ ] Receipt upload button on item form (file input, drag-and-drop)
+- [ ] Loading state during extraction (spinner, "Analyzing receipt..." banner)
+- [ ] Pre-fill form with extracted data (editable text fields, user can override any value)
+- [ ] Receipt preview: show uploaded image/PDF thumbnail next to form
 
 ---
 
@@ -82,16 +97,17 @@
 **5a (backend) and 5b (frontend) can run in PARALLEL via worktrees.**
 
 ### 5a: Backend Admin
-- [ ] GET /api/admin/reports (all users, filterable by status)
-- [ ] POST /api/admin/reports/:id/approve
-- [ ] POST /api/admin/reports/:id/reject
-- [ ] RBAC: require admin role on all admin routes
+- [ ] `GET /api/admin/reports` — list all reports across all users, `?status=` and `?userId=` filters
+- [ ] `POST /api/admin/reports/:id/approve` — SUBMITTED → APPROVED (uses state machine `transition()`)
+- [ ] `POST /api/admin/reports/:id/reject` — SUBMITTED → REJECTED (uses state machine `transition()`)
+- [ ] RBAC: `requireRole('admin')` middleware on all admin routes
+- [ ] Admin routes mounted at `/api/admin` in app.ts
 
 ### 5b: Frontend Admin
-- [ ] Admin route (protected, admin-only)
-- [ ] Admin report list (all users, status filter)
-- [ ] Approve/reject buttons on submitted reports
-- [ ] Admin report detail view
+- [ ] Admin route (protected, admin-only, redirects non-admin to /reports)
+- [ ] Admin report list (all users, status filter tabs)
+- [ ] Approve/reject action buttons on SUBMITTED reports
+- [ ] Admin report detail view (read-only, shows items and status history)
 
 ---
 
@@ -99,10 +115,16 @@
 
 **Sequential — depends on all backend phases.**
 
+Test setup: Jest + Supertest, test database with per-suite setup/teardown, seed admin + test user.
+
 - [ ] Integration test: DRAFT → SUBMITTED → APPROVED happy path
+  - Create user, create report, add items, submit, admin approve
 - [ ] Integration test: DRAFT → SUBMITTED → REJECTED → DRAFT → SUBMITTED
-- [ ] Integration test: item CRUD locked in SUBMITTED status
-- [ ] Integration test: auth (unauthorized, wrong role)
+  - Full rejection cycle: submit, reject, reopen, edit, re-submit
+- [ ] Integration test: item CRUD locked in SUBMITTED/APPROVED status
+  - Assert 400 on create/update/delete when report not in DRAFT/REJECTED
+- [ ] Integration test: auth (401 unauthorized, 403 wrong role on admin routes)
+  - Request without token → 401, regular user on /api/admin → 403
 
 ---
 
@@ -110,10 +132,10 @@
 
 **Sequential — final pass.**
 
-- [ ] Write README.md (setup instructions, architecture, test commands)
-- [ ] Write AI usage note
-- [ ] Review DECISIONS.md completeness
-- [ ] Clean git history (squash if needed, meaningful messages)
+- [ ] Write README.md — setup instructions (docker-compose up, seed, env vars), architecture overview, test commands
+- [ ] Write AI usage note — tools used, how they helped, where I overrode output (in README or separate file)
+- [ ] Review DECISIONS.md completeness — ensure all trade-offs documented
+- [ ] Clean git history — ensure meaningful messages, no giant commits
 - [ ] Final `docker-compose up --build` smoke test
 
 ---
@@ -121,8 +143,8 @@
 ## Parallelization Summary
 
 ```
-Phase 1 ──► Phase 2a ──► Phase 3a ──► Phase 4 ──► Phase 5a ──► Phase 6 ──► Phase 7
-         └─► Phase 2b ──► Phase 3b ──────────► Phase 5b ────────────────┘
+Phase 1 ──► Phase 2a ──► Phase 3a ──► Phase 4a ──► Phase 5a ──► Phase 6 ──► Phase 7
+          └─► Phase 2b ──► Phase 3b ──► Phase 4b ──► Phase 5b ────────────────┘
 
 Phases parallelizable via worktree:
   - 2a || 2b  (backend auth || frontend auth scaffolding)
