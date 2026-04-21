@@ -56,25 +56,31 @@ Expense categories are an enum in Prisma: `TRAVEL`, `MEALS`, `OFFICE_SUPPLIES`, 
 
 **Why:** A fixed set is simpler and enables filtering. User-defined categories would need a separate table and CRUD — out of scope.
 
-### 7. No Pagination
+### 7. Stitch Prototype Artifacts Are Not Product Requirements
+
+Some Stitch mockups include illustrative UI artifacts that are not meant to become real behavior, such as the signup role selector.
+
+**Why:** The mockups are quick visual specs, not authoritative business logic. In the actual product, roles are not chosen during signup; admin access is seeded and controlled server-side. This keeps the implementation aligned with security rules instead of copying accidental prototype details.
+
+### 8. No Pagination
 
 List endpoints return all results. No `?page=` or `?limit=` parameters.
 
 **Why:** This is a demo with seed data — there won't be thousands of records. Pagination adds backend query logic, frontend page controls, and testing surface that doesn't demonstrate architectural judgment. The "one more day" section already calls it out as the first thing to add for production.
 
-### 8. Single JWT Token (No Refresh)
+### 9. Single JWT Token (No Refresh)
 
 One JWT with a 7-day expiry stored in localStorage. No refresh token rotation.
 
 **Why:** Access + refresh adds a `/auth/refresh` endpoint, token rotation, expiry tracking, and frontend interceptor logic. For a take-home exercise where the only consumer is one browser tab, the security trade-off of a long-lived token is acceptable. A real system would use httpOnly cookies + short-lived access tokens.
 
-### 9. Monorepo Without Workspace Tooling
+### 10. Monorepo Without Workspace Tooling
 
 Backend and frontend are separate directories with their own `package.json` files, managed independently. No Lerna, Nx, or Turborepo.
 
 **Why:** For a 2-app project, workspace tooling adds configuration overhead with no real benefit. Docker Compose handles orchestration.
 
-## 10. Docker Compose: Health Check for Postgres Startup
+## 11. Docker Compose: Health Check for Postgres Startup
 
 The backend `depends_on` Postgres with `condition: service_healthy` using a `pg_isready` health check, not just a bare `depends_on`.
 
@@ -82,13 +88,13 @@ The backend `depends_on` Postgres with `condition: service_healthy` using a `pg_
 
 **Trade-off:** Adds ~5s to startup on fresh volumes while the health check polls. Negligible on subsequent starts.
 
-## 11. Docker Compose: OpenSSL in Alpine Image
+## 12. Docker Compose: OpenSSL in Alpine Image
 
 The backend Dockerfile installs `openssl` via `apk add --no-cache openssl` before `npm ci`.
 
 **Why:** Prisma's query engine is a native binary that links against `libssl`. The `node:20-alpine` image ships without OpenSSL, causing `prisma migrate deploy` to crash at runtime with `Error: Could not parse schema engine response`. This is a known Prisma-on-Alpine issue.
 
-## 12. Multi-model Workflow: Claude + GPT for Different Task Types
+## 13. Multi-model Workflow: Claude + GPT for Different Task Types
 
 **When:** Phase 2 implementation, parallel backend/frontend agents
 
@@ -99,6 +105,88 @@ The backend Dockerfile installs `openssl` via `apk add --no-cache openssl` befor
 **Why:** Not all tasks require the same model. Commit messages and boilerplate don't need deep context — they need speed. Reserving Claude capacity for state machine logic, Zod validation, and AI extraction prompt engineering is the right trade-off.
 
 **What I'd do differently at scale:** Set up model routing upfront rather than reactively — define task categories and assign models before hitting limits mid-flow.
+
+## 14. Phase 3a: Report and Item Service Design Decisions
+
+### Duplicated `findOwnedReport` Helper
+
+Both `ReportService` and `ItemService` have identical `findOwnedReport(reportId, userId)` helper functions that fetch a report, verify existence, and check ownership.
+
+**Why:** The function is only 4-5 lines. Extracting to a shared utility (`common/db.ts` or `common/access.ts`) would be cleaner but introduces a new import graph and module. For Phase 3a, keeping it duplicated is acceptable — the duplication is obvious and easy to refactor later if more modules need it.
+
+**Trade-off:** Duplication vs. shared module. The cost of duplication is low here. Refactor when a third module needs the pattern.
+
+### Report Field Edits Allowed in REJECTED Status
+
+The `PUT /api/reports/:id` endpoint allows updating `title` and `description` when the report status is REJECTED, not just DRAFT. However, item edits remain locked to DRAFT status only.
+
+**Why:** The `docs/architecture.md` specification explicitly states "DRAFT/REJECTED only" for report field updates. This makes practical sense — a user reviewing a rejected report may want to revise the title or description before deciding whether to reopen and resubmit. Items require the explicit reopen action, which is a heavier workflow step.
+
+**Trade-off:** Looser edit lock for report fields vs. tighter lock for items. This is intentional — metadata adjustments are lightweight, but item changes signal substantive revision.
+
+### Block Empty Report Submission
+
+The `submit()` endpoint returns a `ValidationError` if the report has zero expense items.
+
+**Why:** Submitting an empty expense report has no domain value — it's just noise for admins to review. This is a business rule that makes sense for the domain, even though it wasn't explicitly in the requirements. The validation lives in the service layer because it requires a database query to check item count.
+
+**Trade-off:** Extra validation rule not in original spec. However, the rule is obvious in hindsight and prevents meaningless submissions.
+
+### Nested Item Routes with Defense-in-Depth
+
+Item routes are mounted at `/api/reports/:reportId/items`, and the service verifies that each item actually belongs to the specified report (e.g., `WHERE id = ? AND reportId = ?`).
+
+**Why:** Items have no independent existence — every item operation requires the parent report's context (for ownership checks, DRAFT status validation, and total recomputation). Nesting the routes makes this relationship explicit in the URL structure. The extra `reportId` check in the service is defense-in-depth: even if a client manipulates the URL to target an item on a different report, the database query will fail.
+
+**Trade-off:** One extra `WHERE` clause per item mutation. Negligible performance cost for stronger security.
+
+### `transactionDate` as `z.string().datetime()`
+
+The Zod schema uses `z.string().datetime()` for `transactionDate`, not `z.date()`.
+
+**Why:** Express's `express.json()` middleware parses request bodies into plain JavaScript objects — ISO date strings remain as strings, not `Date` objects. Using `z.string().datetime()` validates the ISO 8601 format at the route level, then the service converts to a `Date` object for Prisma. Using `z.date()` would fail validation because the incoming value is a string.
+
+**Trade-off:** Type conversion happens in the service layer rather than the route layer. This is a common Express/JSON pattern.
+
+## 15. Phase 3b: Frontend Report UI Decisions
+
+### Sidebar Layout Introduced in Phase 3b
+
+The app layout now uses a persistent sidebar (256px, `bg-surface-container-high`) for all authenticated routes, matching the Stitch design prototypes. Auth pages (login/signup) remain full-screen.
+
+**Why:** The Stitch designs consistently show a sidebar across all report screens. Introducing it now ensures every subsequent page (admin, etc.) has the same shell without rework. The sidebar includes navigation links, a "New Report" CTA, and user info — the shared frame for the entire authenticated experience.
+
+**Trade-off:** The sidebar is hidden on mobile (`hidden md:flex`). A mobile-responsive hamburger menu is deferred — the assessment targets desktop use.
+
+### Report Create as Page, Not Modal
+
+The Stitch `my_reports` design shows a modal for creating reports. We implement it as a dedicated page at `/reports/new` instead.
+
+**Why:** Modals add state management complexity (open/close, backdrop, focus trap) for marginal UX benefit. A page route is simpler, supports direct URL navigation, and works naturally with browser back button. The form is simple enough that a modal's "in-context" feel isn't necessary.
+
+**Trade-off:** One extra navigation away from the report list. Acceptable for a form with only 2 fields.
+
+### Stats Cards Derived Client-Side
+
+The 4 summary cards on the report list (Total Outstanding, Draft count, In Review count, Approved YTD) are computed from the fetched report list, not from a dedicated API endpoint.
+
+**Why:** There's no backend aggregation endpoint, and adding one would require a new route and service method for data that's already available client-side. The dataset is small (no pagination per architecture decision #8), so computing sums and counts in JS is negligible.
+
+**Trade-off:** If the dataset grows significantly, this approach won't scale. The fix is straightforward — add a `/api/reports/stats` endpoint and swap the client-side computation.
+
+### Item Form Modal Without AI Receipt Section
+
+The `ItemFormModal` implements the form fields from the Stitch `add_expense_item_ai_extracted` design but omits the receipt upload preview and AI extraction banner. Those will be added in Phase 4.
+
+**Why:** The receipt upload requires multer configuration, file storage, and the OpenAI integration — all Phase 4 scope. Building the modal now with just the form fields means Phase 4 only needs to add the receipt section above the existing form, not rebuild the whole modal.
+
+**Trade-off:** The item form looks simpler than the Stitch design until Phase 4. The form is fully functional for manual entry in the meantime.
+
+### Decorative Search Input
+
+The top bar search input is rendered but read-only. It doesn't filter reports.
+
+**Why:** The backend has no search endpoint, and the architecture doesn't call for one. Rendering it visually matches the Stitch design without wiring up dead functionality.
 
 ---
 

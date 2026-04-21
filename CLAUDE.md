@@ -40,7 +40,7 @@ npm run preview      # preview production build
 
 UI screens were designed in Stitch and exported to `stitch_expense_management_system/` as standalone HTML+CSS files. Each screen folder has `code.html` and `screen.png`. The design system ("The Precision Ledger") is in `stitch_expense_management_system/fiscal_slate/DESIGN.md`.
 
-When building frontend components, reference the exported HTML for exact layout, spacing, and color tokens. Key screens:
+When building frontend components, reference the exported HTML for exact layout, spacing, and color tokens. Before implementing any Stitch-based UI screen, first break the design into reusable React components (layout primitives, shared form controls, tables/cards, and repeated sections), then compose the page from those components. Key screens:
 - `login/`, `sign_up/` — auth forms
 - `my_reports/` — user report list with status filters
 - `report_detail_draft/` — report detail + items table

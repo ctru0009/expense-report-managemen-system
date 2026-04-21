@@ -43,23 +43,23 @@
 **3a (backend) and 3b (frontend) can run in PARALLEL via worktrees.**
 
 ### 3a: Backend Reports + Items
-- [ ] Prisma ExpenseReport + ExpenseItem models + migration
-- [ ] ReportService with state machine validation
-- [ ] Unit tests for state machine (all transitions + invalid transitions)
-- [ ] Report CRUD routes (create, read own, update, delete)
-- [ ] Report submit endpoint (DRAFT → SUBMITTED)
-- [ ] Report reopen endpoint (REJECTED → DRAFT, explicit user action)
-- [ ] Item CRUD routes (create, read, update, delete — DRAFT status only)
-- [ ] Total amount recomputation in transaction
-- [ ] List with status filter (no pagination)
+- [x] Prisma ExpenseReport + ExpenseItem models + migration
+- [x] ReportService with state machine validation
+- [x] Unit tests for state machine (all transitions + invalid transitions)
+- [x] Report CRUD routes (create, read own, update, delete)
+- [x] Report submit endpoint (DRAFT → SUBMITTED)
+- [x] Report reopen endpoint (REJECTED → DRAFT, explicit user action)
+- [x] Item CRUD routes (create, read, update, delete — DRAFT status only)
+- [x] Total amount recomputation in transaction
+- [x] List with status filter (no pagination)
 
 ### 3b: Frontend Report UI
-- [ ] Report list page (with status filter tabs)
-- [ ] Report create form
-- [ ] Report detail page (items table, status badge, submit button)
-- [ ] Item add/edit form
-- [ ] Item delete button
-- [ ] Status transition UI (submit button, status indicators)
+- [x] Report list page (with status filter tabs)
+- [x] Report create form
+- [x] Report detail page (items table, status badge, submit button)
+- [x] Item add/edit form
+- [x] Item delete button
+- [x] Status transition UI (submit button, status indicators)
 
 ---
 
