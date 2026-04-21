@@ -7,4 +7,5 @@ uploads/
 .DS_Store
 Thumbs.db
 *.local
+!.claude/**
 coverage/
