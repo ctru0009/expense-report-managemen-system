@@ -73,6 +73,7 @@ export async function submit(reportId: string, userId: string) {
   return prisma.expenseReport.update({
     where: { id: reportId },
     data: { status: newStatus },
+    include: { items: true },
   });
 }
 
@@ -84,5 +85,6 @@ export async function reopen(reportId: string, userId: string) {
   return prisma.expenseReport.update({
     where: { id: reportId },
     data: { status: newStatus },
+    include: { items: true },
   });
 }

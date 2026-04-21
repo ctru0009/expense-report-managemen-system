@@ -92,8 +92,9 @@ export default function ReportDetailPage() {
     }
   }
 
+  const items = report?.items ?? [];
   const canEditItems = report?.status === 'DRAFT';
-  const canSubmit = report?.status === 'DRAFT' && (report.items?.length ?? 0) > 0;
+  const canSubmit = report?.status === 'DRAFT' && items.length > 0;
   const canDelete = report?.status === 'DRAFT';
   const canReopen = report?.status === 'REJECTED';
   const isReportDelete = deleteTarget?.type === 'report';
@@ -197,10 +198,10 @@ export default function ReportDetailPage() {
         <StatsCard
           label="Total Items"
           value={
-            <>
-              <span>{report.items.length}</span>
+              <>
+              <span>{items.length}</span>
               <span className="text-on-surface-variant text-sm font-medium ml-2">
-                {report.items.length === 1 ? 'item' : 'items'}
+                {items.length === 1 ? 'item' : 'items'}
               </span>
             </>
           }
@@ -229,7 +230,7 @@ export default function ReportDetailPage() {
           )}
         </div>
 
-        {report.items.length === 0 ? (
+        {items.length === 0 ? (
           <div className="p-12 text-center text-on-surface-variant">
             <p>No expense items yet.</p>
             {canEditItems && (
@@ -254,7 +255,7 @@ export default function ReportDetailPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/5">
-                {report.items.map((item) => (
+                {items.map((item) => (
                   <tr key={item.id} className="hover:bg-surface-container-high/30 transition-colors group">
                     <td className="px-6 py-4">
                       <span className="font-bold text-on-surface">{item.merchantName}</span>
