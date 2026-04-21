@@ -10,6 +10,7 @@
 - [x] Backend: package.json, tsconfig.json, Prisma schema, .env.example
 - [x] Frontend: scaffold with Vite (React + TypeScript + Tailwind)
 - [x] Write CLAUDE.md, DECISIONS.md, docs/architecture.md, docs/plan.md
+- [x] Design UI screens in Stitch → exported to `stitch_expense_management_system/`
 
 **Can be parallelized via worktree:** No — this is the foundation.
 

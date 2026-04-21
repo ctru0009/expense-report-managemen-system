@@ -1,5 +1,22 @@
 # Architecture
 
+## Design Prototyping with Stitch
+
+Before writing frontend code, all UI screens were designed using **Stitch** (AI design tool) and exported as HTML prototypes to `stitch_expense_management_system/`. Each screen has a `code.html` (standalone HTML+CSS) and a `screen.png` screenshot:
+
+| Screen | Purpose |
+|---|---|
+| `login/` | Login form |
+| `sign_up/` | Registration form |
+| `my_reports/` | User's report list with status filters |
+| `report_detail_draft/` | Report detail with items table, submit button |
+| `add_expense_item_ai_extracted/` | Item form with receipt upload + AI extraction states |
+| `admin_dashboard/` | Admin view: all reports, approve/reject actions |
+
+The design system ("The Precision Ledger") uses a tonal navy/gray palette with no hard borders — depth via background shifts instead. Key tokens are in `fiscal_slate/DESIGN.md`.
+
+**Why this approach:** Stitch generates production-quality HTML+CSS mockups that serve as visual specs. This is more token-efficient than describing UI in text — agents can reference the exported HTML for exact layout, colors, and spacing instead of guessing. It also catches design issues before any React code is written.
+
 ## System Overview
 
 ```
