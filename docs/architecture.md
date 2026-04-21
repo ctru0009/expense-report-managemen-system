@@ -92,7 +92,7 @@ Valid transitions:
 - DRAFT → SUBMITTED (user submits)
 - SUBMITTED → APPROVED (admin approves)
 - SUBMITTED → REJECTED (admin rejects)
-- REJECTED → DRAFT (user re-edits; implicit on item edit)
+- REJECTED → DRAFT (user explicitly reopens via "Reopen to Draft" action)
 - DRAFT → DRAFT (user edits items)
 - Delete only allowed from DRAFT
 
@@ -109,10 +109,11 @@ Valid transitions:
 - `PUT    /api/reports/:id` — update title/description (DRAFT/REJECTED only)
 - `DELETE /api/reports/:id` — delete (DRAFT only)
 - `POST   /api/reports/:id/submit` — DRAFT → SUBMITTED
+- `POST   /api/reports/:id/reopen` — REJECTED → DRAFT (explicit user action)
 
 ### Items
 - `GET    /api/reports/:reportId/items` — list items
-- `POST   /api/reports/:reportId/items` — add item (DRAFT/REJECTED only)
+- `POST   /api/reports/:reportId/items` — add item (DRAFT only)
 - `PUT    /api/reports/:reportId/items/:id` — edit item
 - `DELETE /api/reports/:reportId/items/:id` — delete item
 

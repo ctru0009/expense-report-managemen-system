@@ -16,11 +16,13 @@
 
 ## Key Design Decisions
 
-### 1. REJECTED → DRAFT (not directly to SUBMITTED)
+### 1. REJECTED → DRAFT via Explicit Reopen Action
 
-When an admin rejects a report, it transitions back to `DRAFT`, not directly to `SUBMITTED`. The user must explicitly re-submit after reviewing/editing.
+When an admin rejects a report, the user must click **"Reopen to Draft"** before they can edit items. The transition REJECTED → DRAFT is a deliberate user action, not implicit on first edit.
 
-**Why:** The rejection implies something was wrong. Forcing DRAFT ensures the user reviews the report before re-submitting. Skipping straight to SUBMITTED would mean a user could accidentally re-submit unchanged content. DRAFT gives a clear signal: "you need to look at this."
+**Why:** The spec diagram shows REJECTED → DRAFT as a distinct arrow, implying a deliberate action. Making it explicit means the user acknowledges the rejection and consciously decides to rework the report. An implicit flip (editing an item auto-transitions to DRAFT) risks accidental state changes — a user browsing a rejected report shouldn't silently change its status.
+
+**Trade-off:** This adds one extra endpoint (`POST /api/reports/:id/reopen`) and one extra button in the UI. Worth it for clarity.
 
 ### 2. AI Extraction: Synchronous / Immediate
 
@@ -54,7 +56,19 @@ Expense categories are an enum in Prisma: `TRAVEL`, `MEALS`, `OFFICE_SUPPLIES`, 
 
 **Why:** A fixed set is simpler and enables filtering. User-defined categories would need a separate table and CRUD — out of scope.
 
-### 7. Monorepo Without Workspace Tooling
+### 7. No Pagination
+
+List endpoints return all results. No `?page=` or `?limit=` parameters.
+
+**Why:** This is a demo with seed data — there won't be thousands of records. Pagination adds backend query logic, frontend page controls, and testing surface that doesn't demonstrate architectural judgment. The "one more day" section already calls it out as the first thing to add for production.
+
+### 8. Single JWT Token (No Refresh)
+
+One JWT with a 7-day expiry stored in localStorage. No refresh token rotation.
+
+**Why:** Access + refresh adds a `/auth/refresh` endpoint, token rotation, expiry tracking, and frontend interceptor logic. For a take-home exercise where the only consumer is one browser tab, the security trade-off of a long-lived token is acceptable. A real system would use httpOnly cookies + short-lived access tokens.
+
+### 9. Monorepo Without Workspace Tooling
 
 Backend and frontend are separate directories with their own `package.json` files, managed independently. No Lerna, Nx, or Turborepo.
 
