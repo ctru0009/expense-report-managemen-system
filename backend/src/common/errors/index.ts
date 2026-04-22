@@ -50,3 +50,10 @@ export class ConflictError extends AppError {
     this.name = 'ConflictError';
   }
 }
+
+export class ExtractionError extends AppError {
+  constructor(message: string) {
+    super(502, 'EXTRACTION_FAILED', message);
+    this.name = 'ExtractionError';
+  }
+}
