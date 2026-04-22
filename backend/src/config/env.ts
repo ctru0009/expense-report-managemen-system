@@ -4,6 +4,10 @@ import type { SignOptions } from 'jsonwebtoken';
 
 dotenv.config();
 
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required in production');
+}
+
 export const config = {
   jwtSecret: process.env.JWT_SECRET || 'dev-secret',
   jwtExpiresIn: (process.env.JWT_EXPIRES_IN || '7d') as NonNullable<SignOptions['expiresIn']>,
