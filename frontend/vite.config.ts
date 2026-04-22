@@ -9,10 +9,12 @@ export default defineConfig({
       '/api': {
         target: process.env.VITE_PROXY_TARGET || 'http://localhost:3001',
         changeOrigin: true,
+        timeout: 60000,
       },
       '/uploads': {
         target: process.env.VITE_PROXY_TARGET || 'http://localhost:3001',
         changeOrigin: true,
+        timeout: 60000,
       },
     },
   },
