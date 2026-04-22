@@ -18,8 +18,8 @@ const createItemSchema = z.object({
   amount: z.number().positive('Amount must be positive'),
   currency: z.string().length(3).default('USD'),
   category: z.enum(['TRAVEL', 'MEALS', 'OFFICE_SUPPLIES', 'SOFTWARE', 'HARDWARE', 'MARKETING', 'OTHER']),
-  merchantName: z.string().min(1, 'Merchant name is required').max(200),
-  transactionDate: z.string().datetime().transform((val) => new Date(val)),
+  merchantName: z.string().trim().min(1, 'Merchant name is required').max(200),
+  transactionDate: z.string().datetime({ message: 'Invalid date format' }).transform((val) => new Date(val)),
   receiptUrl: z.string().url().optional(),
 });
 
@@ -27,8 +27,8 @@ const updateItemSchema = z.object({
   amount: z.number().positive().optional(),
   currency: z.string().length(3).optional(),
   category: z.enum(['TRAVEL', 'MEALS', 'OFFICE_SUPPLIES', 'SOFTWARE', 'HARDWARE', 'MARKETING', 'OTHER']).optional(),
-  merchantName: z.string().min(1).max(200).optional(),
-  transactionDate: z.string().datetime().transform((val) => new Date(val)).optional(),
+  merchantName: z.string().trim().min(1).max(200).optional(),
+  transactionDate: z.string().datetime({ message: 'Invalid date format' }).transform((val) => new Date(val)).optional(),
   receiptUrl: z.string().url().nullable().optional(),
 });
 
