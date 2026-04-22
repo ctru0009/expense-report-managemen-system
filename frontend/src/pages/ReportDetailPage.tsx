@@ -93,8 +93,7 @@ export default function ReportDetailPage() {
   }
 
   const items = report?.items ?? [];
-  const editRights = report?.status === 'DRAFT' || report?.status === 'REJECTED';
-  const canEditItems = editRights;
+  const canEditItems = report?.status === 'DRAFT';
   const canSubmit = report?.status === 'DRAFT' && items.length > 0;
   const canDelete = report?.status === 'DRAFT';
   const canReopen = report?.status === 'REJECTED';
