@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import fs from 'fs';
 import type { IExtractionService, ExtractedData, ExtractedField } from './extraction.interface';
-import { VALID_CATEGORIES } from './extraction.interface';
+import { VALID_CATEGORIES, LlmResponseSchema } from './extraction.interface';
 
 const EXTRACTION_PROMPT = `You are a receipt data extraction assistant. Extract the following fields from this receipt image/document:
 - merchant_name: the business/store name
@@ -96,7 +96,14 @@ export class OpenAIExtractionService implements IExtractionService {
     }
 
     try {
-      const parsed = JSON.parse(jsonMatch[0]);
+      const rawParsed = JSON.parse(jsonMatch[0]);
+      const validated = LlmResponseSchema.safeParse(rawParsed);
+      if (!validated.success) {
+        console.error('[Extraction] LLM response failed Zod validation:', validated.error.issues);
+        return {};
+      }
+      const parsed = validated.data;
+
       const categoryValue = parsed.category?.value;
       const normalizedCategory =
         typeof categoryValue === 'string'
