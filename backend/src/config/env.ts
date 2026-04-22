@@ -1,3 +1,4 @@
+import path from 'path';
 import dotenv from 'dotenv';
 import type { SignOptions } from 'jsonwebtoken';
 
@@ -8,7 +9,7 @@ export const config = {
   jwtExpiresIn: (process.env.JWT_EXPIRES_IN || '7d') as NonNullable<SignOptions['expiresIn']>,
   port: parseInt(process.env.PORT || '3001', 10),
   databaseUrl: process.env.DATABASE_URL!,
-  uploadDir: process.env.UPLOAD_DIR || './uploads',
+  uploadDir: path.resolve(process.env.UPLOAD_DIR || './uploads'),
   llmApiKey: process.env.LLM_API_KEY || process.env.OPENAI_API_KEY || '',
   llmBaseUrl: process.env.LLM_BASE_URL || process.env.OPENAI_BASE_URL || 'https://openrouter.ai/api/v1',
   llmModel: process.env.LLM_MODEL || 'google/gemini-2.0-flash-001',
