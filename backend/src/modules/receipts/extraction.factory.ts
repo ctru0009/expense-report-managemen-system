@@ -4,15 +4,19 @@ import { MockExtractionService } from './mock-extraction.service';
 import { config } from '../../config/env';
 
 let _instance: IExtractionService | null = null;
+let _lastApiKey: string | null = null;
 
 export function resetExtractionService(): void {
   _instance = null;
+  _lastApiKey = null;
 }
 
 export function getExtractionService(): IExtractionService {
-  if (_instance) return _instance;
-
   const apiKey = config.llmApiKey;
+
+  if (_instance && _lastApiKey === apiKey) return _instance;
+
+  _lastApiKey = apiKey;
 
   if (!apiKey || apiKey === 'dummy') {
     console.log('[Extraction] No LLM_API_KEY set — using mock extraction service');

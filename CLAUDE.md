@@ -99,8 +99,21 @@ Backend reads from `.env` (see `backend/.env.example`):
 - `JWT_SECRET` — signing key
 - `JWT_EXPIRES_IN` — token TTL (default 7d)
 - `OPENAI_API_KEY` — for receipt extraction (can be dummy for dev)
+- `LLM_API_KEY` — primary key for AI extraction (takes priority over OPENAI_API_KEY)
+- `LLM_BASE_URL` — OpenAI-compatible API base URL (default https://openrouter.ai/api/v1)
+- `LLM_MODEL` — model name for extraction (default google/gemini-2.0-flash-001)
 - `UPLOAD_DIR` — local upload path (default ./uploads)
 - `PORT` — backend port (default 3001)
 
 Frontend reads from `.env`:
 - `VITE_API_URL` — backend URL (default http://localhost:3001)
+
+### Docker Compose environment
+
+`docker-compose.yml` uses `${VAR:-default}` syntax to read LLM config from the **root `.env` file** (next to `docker-compose.yml`). These override the backend's own `.env` because Docker Compose env vars take precedence. To configure AI extraction when running via Docker Compose, set these in the root `.env`:
+
+- `LLM_API_KEY` — required for real AI extraction; if empty or omitted, mock extraction is used
+- `LLM_BASE_URL` — defaults to `https://openrouter.ai/api/v1`
+- `LLM_MODEL` — defaults to `google/gemini-2.0-flash-001`
+
+The extraction factory (`backend/src/modules/receipts/extraction.factory.ts`) selects `MockExtractionService` when the key is empty or `'dummy'`, and `OpenAIExtractionService` otherwise. The instance is re-evaluated if the API key changes between calls (not just cached forever).
