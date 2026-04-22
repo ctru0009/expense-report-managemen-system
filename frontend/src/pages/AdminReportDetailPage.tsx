@@ -5,6 +5,7 @@ import * as adminApi from '../api/admin';
 import { formatDate, formatCurrency } from '../utils/format';
 import { getErrorMessage } from '../utils/api';
 import { CATEGORY_LABELS } from '../utils/constants';
+import { getReceiptFileUrl } from '../api/receipts';
 import StatusBadge from '../components/StatusBadge';
 import StatsCard from '../components/StatsCard';
 
@@ -219,7 +220,7 @@ export default function AdminReportDetailPage() {
                     <td className="px-6 py-4">
                       {item.receiptUrl ? (
                         <a
-                          href={item.receiptUrl}
+                          href={`${getReceiptFileUrl(id!, item.id)}?token=${localStorage.getItem('token')}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-primary text-xs font-bold hover:underline"

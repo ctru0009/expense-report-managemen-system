@@ -1,9 +1,11 @@
 import { Router, Request } from 'express';
 import { z } from 'zod';
+import path from 'path';
 import { upload } from '../../config/multer';
 import { authMiddleware } from '../../middleware/auth';
-import { ValidationError } from '../../common/errors';
+import { ValidationError, NotFoundError } from '../../common/errors';
 import * as receiptService from './receipt.service';
+import { config } from '../../config/env';
 
 const router = Router({ mergeParams: true });
 router.use(authMiddleware);
@@ -22,6 +24,23 @@ const applySchema = z.object({
   category: z.enum(['TRAVEL', 'MEALS', 'OFFICE_SUPPLIES', 'SOFTWARE', 'HARDWARE', 'MARKETING', 'OTHER']).optional(),
   transactionDate: z.string().optional(),
 });
+
+router.get(
+  '/file',
+  async (req: ReceiptRequest, res, next) => {
+    try {
+      const filePath = await receiptService.getReceiptFilePath(
+        req.params.reportId,
+        req.params.itemId,
+        req.user!.userId,
+        req.user!.role,
+      );
+      res.sendFile(filePath);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 router.post(
   '/',

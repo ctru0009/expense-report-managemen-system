@@ -1,13 +1,15 @@
 import { useState, useRef, type FormEvent, type DragEvent } from 'react';
-import type { ExpenseItem, Category, CreateItemRequest, ExtractedData, ApplyExtractionRequest } from '../types';
+import type { ExpenseItem, Category, ReportStatus, CreateItemRequest, ExtractedData, ApplyExtractionRequest } from '../types';
 import * as itemsApi from '../api/items';
 import * as receiptsApi from '../api/receipts';
+import { getReceiptFileUrl } from '../api/receipts';
 import { getErrorMessage } from '../utils/api';
 import { CATEGORIES, CURRENCIES } from '../utils/constants';
 
 interface Props {
   open: boolean;
   reportId: string;
+  reportStatus?: ReportStatus;
   item?: ExpenseItem;
   onClose: () => void;
   onSaved: () => void;
@@ -17,7 +19,8 @@ type ExtractionState = 'idle' | 'uploading' | 'extracting' | 'done' | 'error';
 
 const CONFIDENCE_THRESHOLD = 0.8;
 
-export default function ItemFormModal({ open, reportId, item, onClose, onSaved }: Props) {
+export default function ItemFormModal({ open, reportId, reportStatus, item, onClose, onSaved }: Props) {
+  const isLocked = reportStatus !== undefined && reportStatus !== 'DRAFT';
   const [merchantName, setMerchantName] = useState(item?.merchantName ?? '');
   const [amount, setAmount] = useState(item?.amount?.toString() ?? '');
   const [currency, setCurrency] = useState(item?.currency ?? 'USD');
@@ -30,7 +33,7 @@ export default function ItemFormModal({ open, reportId, item, onClose, onSaved }
 
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(
-    item?.receiptUrl ?? null,
+    item?.receiptUrl && reportId && item?.id ? `${getReceiptFileUrl(reportId, item.id)}?token=${localStorage.getItem('token')}` : null,
   );
   const [receiptFileName, setReceiptFileName] = useState<string>(
     item?.receiptUrl ? item.receiptUrl.split('/').pop() ?? '' : '',
@@ -135,7 +138,7 @@ export default function ItemFormModal({ open, reportId, item, onClose, onSaved }
 
       const result = await receiptsApi.extractReceipt(reportId, itemId);
 
-      setReceiptPreviewUrl((prev) => result.receiptUrl ? `/uploads/${result.receiptUrl.split('/').pop()}` : prev);
+      setReceiptPreviewUrl((prev) => result.receiptUrl ? `${getReceiptFileUrl(reportId, itemId!)}?token=${localStorage.getItem('token')}` : prev);
       setExtractedData(result.extracted);
       setExtractionState('done');
       applyExtractedData(result.extracted);
@@ -548,11 +551,11 @@ export default function ItemFormModal({ open, reportId, item, onClose, onSaved }
         <div className="w-full md:w-5/12 bg-surface-container-high p-8 flex flex-col justify-center items-center space-y-6 min-h-[280px]">
           {!hasReceipt ? (
             <div
-              className="w-full flex flex-col items-center justify-center py-12 border-2 border-dashed border-outline-variant rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-all"
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
+              className={`w-full flex flex-col items-center justify-center py-12 border-2 border-dashed rounded-lg transition-all ${isLocked ? 'border-outline-variant/30 opacity-50 cursor-not-allowed' : 'border-outline-variant cursor-pointer hover:border-primary hover:bg-primary/5'}`}
+              onDragOver={isLocked ? undefined : handleDragOver}
+              onDragLeave={isLocked ? undefined : handleDragLeave}
+              onDrop={isLocked ? undefined : handleDrop}
+              onClick={isLocked ? undefined : () => fileInputRef.current?.click()}
             >
               <svg className="w-12 h-12 text-on-surface-variant mb-4" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6zm8-6v4h-4v-4H8l4-4 4 4h-2z" />
@@ -681,7 +684,8 @@ export default function ItemFormModal({ open, reportId, item, onClose, onSaved }
                   value={merchantName}
                   onChange={(e) => { setMerchantName(e.target.value); clearHighlight('merchantName'); }}
                   placeholder="e.g. Starbucks"
-                  className={`w-full bg-surface-container-low border-0 border-b-2 border-outline-variant px-0 py-2 text-on-surface font-semibold focus:ring-0 focus:border-primary focus:bg-surface-container-lowest transition-all ${getFieldHighlightClass('merchantName')}`}
+                  disabled={isLocked}
+                  className={`w-full bg-surface-container-low border-0 border-b-2 border-outline-variant px-0 py-2 text-on-surface font-semibold focus:ring-0 focus:border-primary focus:bg-surface-container-lowest transition-all disabled:opacity-50 disabled:cursor-not-allowed ${getFieldHighlightClass('merchantName')}`}
                 />
               </div>
 
@@ -696,7 +700,8 @@ export default function ItemFormModal({ open, reportId, item, onClose, onSaved }
                     value={amount}
                     onChange={(e) => { setAmount(e.target.value); clearHighlight('amount'); }}
                     placeholder="0.00"
-                    className={`w-full bg-surface-container-low border-0 border-b-2 border-outline-variant px-0 py-2 text-on-surface font-semibold focus:ring-0 focus:border-primary focus:bg-surface-container-lowest tabular-nums transition-all ${getFieldHighlightClass('amount')}`}
+                    disabled={isLocked}
+                    className={`w-full bg-surface-container-low border-0 border-b-2 border-outline-variant px-0 py-2 text-on-surface font-semibold focus:ring-0 focus:border-primary focus:bg-surface-container-lowest tabular-nums transition-all disabled:opacity-50 disabled:cursor-not-allowed ${getFieldHighlightClass('amount')}`}
                   />
                 </div>
                 <div className="space-y-1">
@@ -704,7 +709,8 @@ export default function ItemFormModal({ open, reportId, item, onClose, onSaved }
                   <select
                     value={currency}
                     onChange={(e) => { setCurrency(e.target.value); clearHighlight('currency'); }}
-                    className={`w-full bg-surface-container-low border-0 border-b-2 border-outline-variant px-0 py-2 text-on-surface font-semibold focus:ring-0 focus:border-primary focus:bg-surface-container-lowest transition-all ${getFieldHighlightClass('currency')}`}
+                    disabled={isLocked}
+                    className={`w-full bg-surface-container-low border-0 border-b-2 border-outline-variant px-0 py-2 text-on-surface font-semibold focus:ring-0 focus:border-primary focus:bg-surface-container-lowest transition-all disabled:opacity-50 disabled:cursor-not-allowed ${getFieldHighlightClass('currency')}`}
                   >
                     {CURRENCIES.map((c) => (
                       <option key={c} value={c}>{c}</option>
@@ -719,7 +725,8 @@ export default function ItemFormModal({ open, reportId, item, onClose, onSaved }
                   <select
                     value={category}
                     onChange={(e) => { setCategory(e.target.value as Category); clearHighlight('category'); }}
-                    className={`w-full bg-surface-container-low border-0 border-b-2 border-outline-variant px-0 py-2 text-on-surface font-semibold focus:ring-0 focus:border-primary focus:bg-surface-container-lowest transition-all ${getFieldHighlightClass('category')}`}
+                    disabled={isLocked}
+                    className={`w-full bg-surface-container-low border-0 border-b-2 border-outline-variant px-0 py-2 text-on-surface font-semibold focus:ring-0 focus:border-primary focus:bg-surface-container-lowest transition-all disabled:opacity-50 disabled:cursor-not-allowed ${getFieldHighlightClass('category')}`}
                   >
                     {CATEGORIES.map((c) => (
                       <option key={c.value} value={c.value}>{c.label}</option>
@@ -733,7 +740,8 @@ export default function ItemFormModal({ open, reportId, item, onClose, onSaved }
                     required
                     value={transactionDate}
                     onChange={(e) => { setTransactionDate(e.target.value); clearHighlight('transactionDate'); }}
-                    className={`w-full bg-surface-container-low border-0 border-b-2 border-outline-variant px-0 py-2 text-on-surface font-semibold focus:ring-0 focus:border-primary focus:bg-surface-container-lowest transition-all ${getFieldHighlightClass('transactionDate')}`}
+                    disabled={isLocked}
+                    className={`w-full bg-surface-container-low border-0 border-b-2 border-outline-variant px-0 py-2 text-on-surface font-semibold focus:ring-0 focus:border-primary focus:bg-surface-container-lowest transition-all disabled:opacity-50 disabled:cursor-not-allowed ${getFieldHighlightClass('transactionDate')}`}
                   />
                 </div>
               </div>
@@ -756,7 +764,7 @@ export default function ItemFormModal({ open, reportId, item, onClose, onSaved }
               <button
                 type="submit"
                 onClick={handleSubmit}
-                disabled={loading || extractionState === 'uploading' || extractionState === 'extracting'}
+                disabled={isLocked || loading || extractionState === 'uploading' || extractionState === 'extracting'}
                 className="px-6 py-2.5 rounded-lg font-bold text-sm bg-gradient-to-br from-primary to-primary-container text-on-primary shadow-lg hover:scale-95 active:opacity-80 transition-transform disabled:opacity-60"
               >
                 {loading ? 'Saving...' : isDraft ? 'Add Item' : item ? 'Update Item' : 'Add Item'}

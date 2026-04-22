@@ -6,6 +6,7 @@ import * as itemsApi from '../api/items';
 import { formatDate, formatCurrency } from '../utils/format';
 import { getErrorMessage } from '../utils/api';
 import { CATEGORY_LABELS } from '../utils/constants';
+import { getReceiptFileUrl } from '../api/receipts';
 import StatusBadge from '../components/StatusBadge';
 import StatsCard from '../components/StatsCard';
 import ItemFormModal from '../components/ItemFormModal';
@@ -269,7 +270,7 @@ export default function ReportDetailPage() {
                     <td className="px-6 py-4">
                       {item.receiptUrl ? (
                         <a
-                          href={item.receiptUrl}
+                          href={`${getReceiptFileUrl(id!, item.id)}?token=${localStorage.getItem('token')}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-primary font-bold text-xs hover:underline"
@@ -331,6 +332,7 @@ export default function ReportDetailPage() {
         key={editingItem?.id ?? 'new'}
         open={itemModalOpen}
         reportId={report.id}
+        reportStatus={report.status}
         item={editingItem}
         onClose={() => { setItemModalOpen(false); setEditingItem(undefined); }}
         onSaved={() => { setItemModalOpen(false); setEditingItem(undefined); loadReport(); }}

@@ -47,3 +47,7 @@ export async function deleteReceipt(
   );
   return data;
 }
+
+export function getReceiptFileUrl(reportId: string, itemId: string): string {
+  return `/api/reports/${reportId}/items/${itemId}/receipt/file`;
+}
