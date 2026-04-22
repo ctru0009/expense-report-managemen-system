@@ -88,11 +88,11 @@ These decisions define how the expense report state machine works and what const
 
 ### 10. Report Field Edits Allowed in REJECTED, Item Edits Require Reopen
 
-**What:** Updating a report's `title` and `description` is allowed in both DRAFT and REJECTED status. Editing items (add/update/delete) is allowed in DRAFT and REJECTED per the backend state machine, but the frontend gate-keeps item edits behind the explicit "Reopen to Draft" action.
+**What:** Updating a report's `title` and `description` is allowed in both DRAFT and REJECTED status. Editing items (add/update/delete) is only allowed in DRAFT status — the user must explicitly reopen a rejected report to DRAFT before items become editable. Both the backend (`canEditItems`) and frontend enforce this consistently.
 
-**Why:** The `canEditMetadata` guard returns true for REJECTED, letting users revise metadata before deciding to reopen. The `canEditItems` guard also returns true for REJECTED in the backend — the frontend adds an extra layer of UX safety by requiring the reopen step first.
+**Why:** The spec diagram shows REJECTED → DRAFT as a distinct arrow, implying a deliberate action. Item mutations change financial data and affect `totalAmount`, so they require the explicit reopen step to prevent accidental state changes. Metadata edits (title, description) are non-financial and safe to allow on REJECTED reports — a user browsing a rejected report should be able to revise the title without a state transition.
 
-**Trade-off:** There's a surface-level inconsistency: the backend allows item edits in REJECTED while the frontend restricts them to DRAFT. This is intentional — the backend validates domain rules (rejected items *can* be edited after reopen), while the frontend enforces a stricter UX flow (force the user to acknowledge the reopen action before touching items).
+**Trade-off:** Users must click "Reopen to Draft" before editing items on a rejected report — one extra step. This is intentional: the reopen action serves as a confirmation gate, ensuring the user is aware they are changing the report state before modifying financial data.
 
 ---
 
