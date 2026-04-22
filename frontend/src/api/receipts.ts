@@ -12,7 +12,6 @@ export async function uploadReceipt(
   const { data } = await api.post<ReceiptUploadResponse>(
     `/api/reports/${reportId}/items/${itemId}/receipt`,
     formData,
-    { headers: { 'Content-Type': 'multipart/form-data' } },
   );
   return data;
 }

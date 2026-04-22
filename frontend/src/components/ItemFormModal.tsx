@@ -26,6 +26,7 @@ export default function ItemFormModal({ open, reportId, item, onClose, onSaved }
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(
     item?.receiptUrl ?? null,
@@ -40,6 +41,8 @@ export default function ItemFormModal({ open, reportId, item, onClose, onSaved }
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!open) return null;
+
+  const isEditing = !!item?.id;
 
   function handleDragOver(e: DragEvent) {
     e.preventDefault();
@@ -89,8 +92,10 @@ export default function ItemFormModal({ open, reportId, item, onClose, onSaved }
       setReceiptPreviewUrl(null);
     }
 
-    if (item?.id) {
+    if (isEditing) {
       uploadAndExtract(file);
+    } else {
+      setPendingFile(file);
     }
   }
 
@@ -141,8 +146,25 @@ export default function ItemFormModal({ open, reportId, item, onClose, onSaved }
     });
   }
 
-  function handleReplaceFile() {
+  async function handleDeleteReceipt() {
+    if (!item?.id) return;
+    try {
+      await receiptsApi.deleteReceipt(reportId, item.id);
+      setReceiptFile(null);
+      setReceiptPreviewUrl(null);
+      setReceiptFileName('');
+      setExtractionState('idle');
+      setExtractionError('');
+      setHighlightedFields(new Set());
+      onSaved();
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Failed to remove receipt'));
+    }
+  }
+
+  function handleClearReceipt() {
     setReceiptFile(null);
+    setPendingFile(null);
     setReceiptPreviewUrl(null);
     setReceiptFileName('');
     setExtractionState('idle');
@@ -154,28 +176,60 @@ export default function ItemFormModal({ open, reportId, item, onClose, onSaved }
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError('');
-    setLoading(true);
 
-    const payload: CreateItemRequest = {
-      merchantName,
-      amount: parseFloat(amount),
-      currency,
-      category,
-      transactionDate: new Date(transactionDate).toISOString(),
-    };
-
-    if (isNaN(payload.amount) || payload.amount <= 0) {
-      setError('Please enter a valid amount');
-      setLoading(false);
+    if (!merchantName.trim()) {
+      setError('Merchant name is required');
       return;
     }
 
+    const parsedAmount = parseFloat(amount);
+    if (!amount || isNaN(parsedAmount) || parsedAmount <= 0) {
+      setError('Please enter a valid amount greater than zero');
+      return;
+    }
+
+    if (!transactionDate) {
+      setError('Transaction date is required');
+      return;
+    }
+
+    const dateObj = new Date(transactionDate);
+    if (isNaN(dateObj.getTime())) {
+      setError('Invalid transaction date');
+      return;
+    }
+
+    setLoading(true);
+
+    const payload: CreateItemRequest = {
+      merchantName: merchantName.trim(),
+      amount: parsedAmount,
+      currency,
+      category,
+      transactionDate: dateObj.toISOString(),
+    };
+
     try {
+      let savedItem: ExpenseItem;
+
       if (item) {
         await itemsApi.updateItem(reportId, item.id, payload);
+        savedItem = item;
       } else {
-        await itemsApi.createItem(reportId, payload);
+        savedItem = await itemsApi.createItem(reportId, payload);
       }
+
+      if (pendingFile) {
+        try {
+          await receiptsApi.uploadReceipt(reportId, savedItem.id, pendingFile);
+        } catch (receiptErr: unknown) {
+          setError(`Item saved, but receipt upload failed: ${getErrorMessage(receiptErr, 'Upload failed')}. You can re-upload the receipt by editing this item.`);
+          setLoading(false);
+          onSaved();
+          return;
+        }
+      }
+
       onSaved();
     } catch (err: unknown) {
       setError(getErrorMessage(err, 'Failed to save item'));
@@ -232,17 +286,22 @@ export default function ItemFormModal({ open, reportId, item, onClose, onSaved }
               <div className="text-center">
                 <p className="text-on-surface-variant text-[10px] font-bold uppercase tracking-wider mb-2">File Uploaded</p>
                 <p className="text-on-surface font-semibold text-sm">{receiptFileName}</p>
-                <button
-                  onClick={handleReplaceFile}
-                  className="mt-4 text-primary text-xs font-bold flex items-center justify-center gap-1 mx-auto hover:underline"
-                >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z" />
-                  </svg>
-                  Replace File
-                </button>
+                <div className="flex items-center justify-center gap-4 mt-4">
+                  <button
+                    onClick={isEditing ? handleDeleteReceipt : handleClearReceipt}
+                    className="text-error text-xs font-bold flex items-center justify-center gap-1 hover:underline"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
+                    </svg>
+                    Remove
+                  </button>
+                </div>
               </div>
             </>
+          )}
+          {!hasReceipt && !isEditing && (
+            <p className="text-on-surface-variant text-xs text-center mt-2">Receipt will be uploaded when you save the item</p>
           )}
           <input
             ref={fileInputRef}
@@ -272,6 +331,16 @@ export default function ItemFormModal({ open, reportId, item, onClose, onSaved }
             </div>
           )}
 
+          {/* Pending file banner (new items) */}
+          {pendingFile && !isEditing && (
+            <div className="bg-surface-container-low px-8 py-3 flex items-center gap-3 flex-shrink-0">
+              <svg className="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H15z" />
+              </svg>
+              <span className="text-sm font-semibold text-on-surface-variant">{pendingFile.name} will be uploaded with AI extraction when you save</span>
+            </div>
+          )}
+
           {/* Extraction loading */}
           {(extractionState === 'uploading' || extractionState === 'extracting') && (
             <div className="bg-surface-container-low px-8 py-3 flex items-center gap-3 flex-shrink-0">
@@ -288,10 +357,10 @@ export default function ItemFormModal({ open, reportId, item, onClose, onSaved }
             <div className="flex justify-between items-start">
               <div>
                 <h2 className="text-2xl font-black text-on-surface tracking-tight">
-                  {item && hasExtraction ? 'Edit Expense Item' : item ? 'Edit Expense Item' : 'Add Expense Item'}
+                  {isEditing ? 'Edit Expense Item' : 'Add Expense Item'}
                 </h2>
                 <p className="text-on-surface-variant text-sm mt-1">
-                  {hasExtraction ? 'Review the details extracted from your receipt.' : item ? 'Update the details of this expense.' : 'Add a new expense line item.'}
+                  {hasExtraction ? 'Review the details extracted from your receipt.' : isEditing ? 'Update the details of this expense.' : 'Add a new expense line item.'}
                 </p>
               </div>
               <button onClick={onClose} className="text-on-surface-variant hover:text-error transition-colors">
