@@ -1,4 +1,4 @@
-import { ReportStatus } from '@prisma/client';
+import { Prisma, ReportStatus } from '@prisma/client';
 import { prisma } from '../../config/prisma';
 import { NotFoundError } from '../../common/errors';
 import { transition } from '../reports/report-state-machine';
@@ -9,7 +9,7 @@ const adminInclude = {
 };
 
 export async function listAllReports(status?: ReportStatus, userId?: string) {
-  const where: Record<string, unknown> = {};
+  const where: Prisma.ExpenseReportWhereInput = {};
   if (status) where.status = status;
   if (userId) where.userId = userId;
 
@@ -34,25 +34,37 @@ export async function getReportById(reportId: string) {
 }
 
 export async function approveReport(reportId: string) {
-  const report = await getReportById(reportId);
+  return prisma.$transaction(async (tx) => {
+    const report = await tx.expenseReport.findUnique({
+      where: { id: reportId },
+      include: adminInclude,
+    });
+    if (!report) throw new NotFoundError('Report');
 
-  const newStatus = transition(report.status, 'approve');
+    const newStatus = transition(report.status, 'approve');
 
-  return prisma.expenseReport.update({
-    where: { id: reportId },
-    data: { status: newStatus },
-    include: adminInclude,
+    return tx.expenseReport.update({
+      where: { id: reportId },
+      data: { status: newStatus },
+      include: adminInclude,
+    });
   });
 }
 
 export async function rejectReport(reportId: string) {
-  const report = await getReportById(reportId);
+  return prisma.$transaction(async (tx) => {
+    const report = await tx.expenseReport.findUnique({
+      where: { id: reportId },
+      include: adminInclude,
+    });
+    if (!report) throw new NotFoundError('Report');
 
-  const newStatus = transition(report.status, 'reject');
+    const newStatus = transition(report.status, 'reject');
 
-  return prisma.expenseReport.update({
-    where: { id: reportId },
-    data: { status: newStatus },
-    include: adminInclude,
+    return tx.expenseReport.update({
+      where: { id: reportId },
+      data: { status: newStatus },
+      include: adminInclude,
+    });
   });
 }

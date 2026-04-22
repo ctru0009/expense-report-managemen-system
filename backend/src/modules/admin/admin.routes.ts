@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Response, type NextFunction } from 'express';
 import { z } from 'zod';
 import * as adminService from './admin.service';
 import { authMiddleware } from '../../middleware/auth';
@@ -14,6 +14,18 @@ const listQuerySchema = z.object({
   userId: z.string().uuid().optional(),
 });
 
+const idParamSchema = z.object({
+  id: z.string().uuid('Invalid report ID'),
+});
+
+function validateParamId(req: { params: { id?: string } }, _res: Response, next: NextFunction) {
+  const parsed = idParamSchema.safeParse(req.params);
+  if (!parsed.success) {
+    return next(new ValidationError(parsed.error.issues.map((i) => i.message).join(', ')));
+  }
+  next();
+}
+
 router.get('/', async (req, res, next) => {
   try {
     const parsed = listQuerySchema.safeParse(req.query);
@@ -28,27 +40,27 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-router.get('/:id', async (req, res, next) => {
+router.get('/:id', validateParamId, async (req, res, next) => {
   try {
-    const report = await adminService.getReportById(req.params.id);
+    const report = await adminService.getReportById(req.params.id!);
     res.json(report);
   } catch (err) {
     next(err);
   }
 });
 
-router.post('/:id/approve', async (req, res, next) => {
+router.post('/:id/approve', validateParamId, async (req, res, next) => {
   try {
-    const report = await adminService.approveReport(req.params.id);
+    const report = await adminService.approveReport(req.params.id!);
     res.json(report);
   } catch (err) {
     next(err);
   }
 });
 
-router.post('/:id/reject', async (req, res, next) => {
+router.post('/:id/reject', validateParamId, async (req, res, next) => {
   try {
-    const report = await adminService.rejectReport(req.params.id);
+    const report = await adminService.rejectReport(req.params.id!);
     res.json(report);
   } catch (err) {
     next(err);
