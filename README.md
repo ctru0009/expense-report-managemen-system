@@ -2,6 +2,8 @@
 
 A full-stack expense report management system with JWT auth, state-machine-driven workflows, receipt upload with AI extraction, and admin review.
 
+![Admin Dashboard](img/admin-dashboard.png)
+
 ## Quick Start
 
 ```bash
