@@ -27,7 +27,8 @@ export default function AdminReportDetailPage() {
     try {
       const data = await adminApi.getAdminReport(id);
       setReport(data);
-    } catch {
+    } catch (err) {
+      console.error('Failed to load admin report:', err);
       setError('Failed to load report');
     } finally {
       setLoading(false);
@@ -129,7 +130,7 @@ export default function AdminReportDetailPage() {
                 <button
                   onClick={handleApprove}
                   disabled={actionLoading}
-                  className="px-8 py-2.5 rounded-lg bg-gradient-to-br from-[#137333] to-[#e6f4ea] text-[#137333] font-bold text-sm shadow-lg shadow-[#137333]/20 hover:opacity-90 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-60"
+                  className="px-8 py-2.5 rounded-lg bg-primary text-on-primary font-bold text-sm shadow-lg hover:opacity-90 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-60"
                 >
                   Approve
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -139,7 +140,7 @@ export default function AdminReportDetailPage() {
               </>
             )}
             {report.status === 'APPROVED' && (
-              <span className="text-[#137333] text-sm font-bold">Approved</span>
+              <span className="text-primary text-sm font-bold">Approved</span>
             )}
             {report.status === 'REJECTED' && (
               <span className="text-on-error-container text-sm font-bold">Rejected</span>
@@ -198,8 +199,8 @@ export default function AdminReportDetailPage() {
                   <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Merchant</th>
                   <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Date</th>
                   <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Category</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Currency</th>
                   <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest text-right">Amount</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Receipt</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/5">
@@ -214,8 +215,21 @@ export default function AdminReportDetailPage() {
                         {CATEGORY_LABELS[item.category] || item.category}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm font-semibold text-on-surface-variant">{item.currency}</td>
-                    <td className="px-6 py-4 font-black text-on-surface tabular-nums text-right">{Number(item.amount).toFixed(2)}</td>
+                    <td className="px-6 py-4 font-black text-on-surface tabular-nums text-right">{formatCurrency(Number(item.amount))}</td>
+                    <td className="px-6 py-4">
+                      {item.receiptUrl ? (
+                        <a
+                          href={item.receiptUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary text-xs font-bold hover:underline"
+                        >
+                          View Receipt
+                        </a>
+                      ) : (
+                        <span className="text-on-surface-variant text-xs">None</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

@@ -32,7 +32,8 @@ export default function AdminDashboardPage() {
     try {
       const data = await adminApi.fetchAdminReports();
       setAllReports(data);
-    } catch {
+    } catch (err) {
+      console.error('Failed to load admin reports:', err);
       setError('Failed to load reports');
     } finally {
       setLoading(false);
@@ -47,14 +48,15 @@ export default function AdminDashboardPage() {
   const stats = useMemo(() => {
     let submittedCount = 0;
     let approvedTotal = 0;
+    let reviewedCount = 0;
     let totalActionable = 0;
     for (const r of allReports) {
       if (r.status === 'SUBMITTED') submittedCount++;
       if (r.status === 'APPROVED') approvedTotal += Number(r.totalAmount);
+      if (r.status === 'APPROVED' || r.status === 'REJECTED') reviewedCount++;
       if (r.status === 'SUBMITTED' || r.status === 'APPROVED' || r.status === 'REJECTED') totalActionable++;
     }
-    const approvedCount = allReports.filter((r) => r.status === 'APPROVED').length;
-    const auditPct = totalActionable > 0 ? Math.round((approvedCount / totalActionable) * 100) : 0;
+    const auditPct = totalActionable > 0 ? Math.round((reviewedCount / totalActionable) * 100) : 0;
     return { submittedCount, approvedTotal, auditPct };
   }, [allReports]);
 
@@ -137,7 +139,7 @@ export default function AdminDashboardPage() {
             <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-1">Pending Review</h3>
             <p className="text-2xl font-black text-on-surface tabular-nums">{stats.submittedCount}</p>
           </div>
-          <p className="text-xs text-[#137333] mt-4 font-medium">
+          <p className="text-xs text-primary mt-4 font-medium">
             Awaiting admin action
           </p>
         </div>
@@ -217,7 +219,7 @@ export default function AdminDashboardPage() {
                           <button
                             onClick={() => handleApprove(report.id)}
                             disabled={actionLoading === report.id + '-approve'}
-                            className="px-3 py-1.5 text-xs font-bold text-[#137333] bg-[#e6f4ea] rounded hover:bg-[#ceead6] transition-colors disabled:opacity-60"
+                            className="px-3 py-1.5 text-xs font-bold text-primary bg-primary-container rounded hover:bg-primary-container/80 transition-colors disabled:opacity-60"
                           >
                             Approve
                           </button>
