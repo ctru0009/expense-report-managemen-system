@@ -1,37 +1,6 @@
-import { z } from 'zod';
 import { ValidationError } from '../../src/common/errors';
-
-const createReportSchema = z.object({
-  title: z.string().min(1, 'Title is required').max(200),
-  description: z.string().max(1000).optional(),
-});
-
-const updateReportSchema = z.object({
-  title: z.string().min(1).max(200).optional(),
-  description: z.string().max(1000).nullable().optional(),
-});
-
-const statusFilterSchema = z.object({
-  status: z.enum(['DRAFT', 'SUBMITTED', 'APPROVED', 'REJECTED']).optional(),
-});
-
-const createItemSchema = z.object({
-  amount: z.number().positive('Amount must be positive'),
-  currency: z.string().length(3).default('USD'),
-  category: z.enum(['TRAVEL', 'MEALS', 'OFFICE_SUPPLIES', 'SOFTWARE', 'HARDWARE', 'MARKETING', 'OTHER']),
-  merchantName: z.string().min(1, 'Merchant name is required').max(200),
-  transactionDate: z.string().datetime().transform((val) => new Date(val)),
-  receiptUrl: z.string().url().optional(),
-});
-
-const updateItemSchema = z.object({
-  amount: z.number().positive().optional(),
-  currency: z.string().length(3).optional(),
-  category: z.enum(['TRAVEL', 'MEALS', 'OFFICE_SUPPLIES', 'SOFTWARE', 'HARDWARE', 'MARKETING', 'OTHER']).optional(),
-  merchantName: z.string().min(1).max(200).optional(),
-  transactionDate: z.string().datetime().transform((val) => new Date(val)).optional(),
-  receiptUrl: z.string().url().nullable().optional(),
-});
+import { createReportSchema, updateReportSchema, statusFilterSchema } from '../../src/modules/reports/report.routes';
+import { createItemSchema, updateItemSchema } from '../../src/modules/items/item.routes';
 
 describe('Report Validation Schemas', () => {
   describe('createReportSchema', () => {
@@ -178,13 +147,8 @@ describe('Item Validation Schemas', () => {
       expect(result.success).toBe(false);
     });
 
-    it('rejects invalid receiptUrl', () => {
-      const result = createItemSchema.safeParse({ ...validItem, receiptUrl: 'not-a-url' });
-      expect(result.success).toBe(false);
-    });
-
-    it('accepts valid receiptUrl', () => {
-      const result = createItemSchema.safeParse({ ...validItem, receiptUrl: 'https://example.com/receipt.pdf' });
+    it('accepts valid receiptUrl path', () => {
+      const result = createItemSchema.safeParse({ ...validItem, receiptUrl: '/uploads/123456-abc.png' });
       expect(result.success).toBe(true);
     });
 
@@ -193,6 +157,14 @@ describe('Item Validation Schemas', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.data.transactionDate).toBeInstanceOf(Date);
+      }
+    });
+
+    it('trims merchantName whitespace', () => {
+      const result = createItemSchema.safeParse({ ...validItem, merchantName: '  Trimmed  ' });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.merchantName).toBe('Trimmed');
       }
     });
   });
@@ -236,6 +208,19 @@ describe('Item Validation Schemas', () => {
     it('rejects empty merchantName in update', () => {
       const result = updateItemSchema.safeParse({ merchantName: '' });
       expect(result.success).toBe(false);
+    });
+
+    it('accepts valid receiptUrl path', () => {
+      const result = updateItemSchema.safeParse({ receiptUrl: '/uploads/file.png' });
+      expect(result.success).toBe(true);
+    });
+
+    it('trims merchantName whitespace in update', () => {
+      const result = updateItemSchema.safeParse({ merchantName: '  Trimmed  ' });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.merchantName).toBe('Trimmed');
+      }
     });
   });
 });

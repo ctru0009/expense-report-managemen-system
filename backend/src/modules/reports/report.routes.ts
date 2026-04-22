@@ -7,17 +7,17 @@ import { ValidationError } from '../../common/errors';
 const router = Router();
 router.use(authMiddleware);
 
-const createReportSchema = z.object({
+export const createReportSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200),
   description: z.string().max(1000).optional(),
 });
 
-const updateReportSchema = z.object({
+export const updateReportSchema = z.object({
   title: z.string().min(1).max(200).optional(),
   description: z.string().max(1000).nullable().optional(),
 });
 
-const statusFilterSchema = z.object({
+export const statusFilterSchema = z.object({
   status: z.enum(['DRAFT', 'SUBMITTED', 'APPROVED', 'REJECTED']).optional(),
 });
 
