@@ -154,6 +154,7 @@ Client                          Backend                         AI Provider
 
 ### Admin
 - `GET    /api/admin/reports` — list all reports, `?status=` filter, `?userId=` filter
+- `GET    /api/admin/reports/:id` — get any report with items and submitter info (no ownership check)
 - `POST   /api/admin/reports/:id/approve` — SUBMITTED → APPROVED
 - `POST   /api/admin/reports/:id/reject` — SUBMITTED → REJECTED
 
@@ -162,8 +163,8 @@ Client                          Backend                         AI Provider
 1. Client sends `POST /api/auth/login` with email + password
 2. Server validates, returns `{ token, user }`
 3. Client stores token, sends `Authorization: Bearer <token>` on subsequent requests
-4. `authMiddleware` verifies JWT, attaches `req.user = { userId, role }`
-5. `requireRole('admin')` middleware restricts admin endpoints
+4. `authMiddleware` verifies JWT, attaches `req.user = { userId, role }` where `role` is the Prisma `Role` enum (`USER` | `ADMIN`)
+5. `requireRole('ADMIN')` middleware restricts admin endpoints — typed to Prisma's `Role` enum to prevent typo mismatches
 
 ## Error Handling
 
@@ -194,7 +195,8 @@ React SPA with React Router v6
 ├── /reports        → User's report list (with status filter)
 ├── /reports/:id    → Report detail + items + submit button
 ├── /reports/new    → Create report form
-└── /admin          → Admin dashboard (all reports, approve/reject)
+├── /admin          → Admin dashboard (all reports, approve/reject)
+└── /admin/reports/:id → Admin report detail (read-only, receipt links)
 
 State management: React Context for auth, local state + fetch hooks for data.
 No Redux/Zustand — scope doesn't justify it.
@@ -205,15 +207,23 @@ No Redux/Zustand — scope doesn't justify it.
 ### Unit Tests
 
 - **State machine**: all valid/invalid transitions, `canEditItems`, `canEditMetadata`, `canDelete` guard functions. Located in `backend/tests/unit/report-state-machine.test.ts`.
+- **Report service**: `submit`, `reopen`, `delete` with status guards and ownership checks. Located in `backend/tests/unit/report-service.test.ts`.
+- **Item service**: item CRUD locked by report status, total recomputation triggers. Located in `backend/tests/unit/item-service.test.ts`.
+- **Item utils**: `recomputeTotal` with mock transaction object (add, update, delete item scenarios). Located in `backend/tests/unit/item-utils.test.ts`.
+- **Report utils**: `findOwnedReport` ownership check + 404 handling. Located in `backend/tests/unit/report-utils.test.ts`.
+- **Zod validations**: UUID param schemas, signup/login schemas. Located in `backend/tests/unit/validations.test.ts`.
 - Tests use `StateTransitionError` and `ValidationError` assertions (not generic `Error`) to verify proper HTTP status code mapping.
 
-### Integration Tests (Phase 6)
+### Integration Tests
 
-Integration tests hit running API endpoints with a real database:
+Integration tests hit running API endpoints with a real PostgreSQL database. Located in `backend/tests/integration/api.test.ts`.
 
-1. **DRAFT → SUBMITTED → APPROVED**: create report, add item, submit, admin approve.
-2. **DRAFT → SUBMITTED → REJECTED → DRAFT → SUBMITTED**: full rejection-reopen-resubmit cycle.
-3. **Item CRUD locked in SUBMITTED**: assert 400 on create/update/delete items when report is SUBMITTED.
-4. **Auth**: unauthenticated requests return 401; non-admin on admin routes returns 403.
+Five test suites covering the critical paths:
 
-Tests use Jest + Supertest against the Express app with a test database. Setup/teardown scripts seed and clean the database per test suite.
+1. **Auth: 401 and 403** — unauthenticated requests return 401 (`UNAUTHORIZED`); regular user on `/api/admin/*` returns 403 (`FORBIDDEN`).
+2. **DRAFT → SUBMITTED → APPROVED happy path** — user creates report, adds item, submits; admin approves. Verifies status at each step and total amount recomputation.
+3. **DRAFT → SUBMITTED → REJECTED → DRAFT → SUBMITTED** — full rejection cycle: submit, admin reject, user reopen, edit item, re-submit. Verifies that item edits are blocked in SUBMITTED/APPROVED and allowed after reopen.
+4. **Item CRUD locked by report status** — asserts 400 on create/update/delete items when report is SUBMITTED or APPROVED; confirms edits allowed in DRAFT and REJECTED.
+5. **Admin param validation** — invalid UUID in `:id` param returns 400 with `VALIDATION_ERROR` code (not a 500 Prisma internal error).
+
+Tests use Jest + Supertest against the Express app with a real PostgreSQL database. A `globalSetup.ts` swaps the Docker hostname (`postgres`) to `localhost` for local test execution and verifies database connectivity before tests run. Each test suite creates its own users via `beforeAll` and cleans up via `afterAll` — no shared seed state between suites.

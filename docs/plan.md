@@ -102,16 +102,21 @@
 
 ### 5a: Backend Admin
 - [x] `GET /api/admin/reports` — list all reports across all users, `?status=` and `?userId=` filters
+- [x] `GET /api/admin/reports/:id` — get any report with items and submitter info
 - [x] `POST /api/admin/reports/:id/approve` — SUBMITTED → APPROVED (uses state machine `transition()`)
 - [x] `POST /api/admin/reports/:id/reject` — SUBMITTED → REJECTED (uses state machine `transition()`)
-- [x] RBAC: `requireRole('admin')` middleware on all admin routes
+- [x] RBAC: `requireRole('ADMIN')` middleware on all admin routes
+- [x] Zod UUID param validation on admin routes `:id` params (returns 400, not 500)
+- [x] Transaction-wrapped approve/reject to prevent TOCTOU race conditions
 - [x] Admin routes mounted at `/api/admin` in app.ts
 
 ### 5b: Frontend Admin
 - [x] Admin route (protected, admin-only, redirects non-admin to /reports)
 - [x] Admin report list (all users, status filter tabs)
 - [x] Approve/reject action buttons on SUBMITTED reports
-- [x] Admin report detail view (read-only, shows items and status history)
+- [x] Admin report detail view (read-only, shows items and receipt links)
+- [x] Receipt "View Receipt" link column in admin detail items table
+- [x] Audit completion % counts both APPROVED and REJECTED as "reviewed"
 
 ---
 
@@ -121,14 +126,16 @@
 
 Test setup: Jest + Supertest, test database with per-suite setup/teardown, seed admin + test user.
 
-- [ ] Integration test: DRAFT → SUBMITTED → APPROVED happy path
+- [x] Integration test: DRAFT → SUBMITTED → APPROVED happy path
   - Create user, create report, add items, submit, admin approve
-- [ ] Integration test: DRAFT → SUBMITTED → REJECTED → DRAFT → SUBMITTED
+- [x] Integration test: DRAFT → SUBMITTED → REJECTED → DRAFT → SUBMITTED
   - Full rejection cycle: submit, reject, reopen, edit, re-submit
-- [ ] Integration test: item CRUD locked in SUBMITTED/APPROVED status
+- [x] Integration test: item CRUD locked in SUBMITTED/APPROVED status
   - Assert 400 on create/update/delete when report not in DRAFT/REJECTED
-- [ ] Integration test: auth (401 unauthorized, 403 wrong role on admin routes)
+- [x] Integration test: auth (401 unauthorized, 403 wrong role on admin routes)
   - Request without token → 401, regular user on /api/admin → 403
+- [x] Integration test: admin param validation (invalid UUID returns 400)
+  - Non-UUID `:id` returns 400 with VALIDATION_ERROR code
 
 ---
 
@@ -136,8 +143,9 @@ Test setup: Jest + Supertest, test database with per-suite setup/teardown, seed 
 
 **Sequential — final pass.**
 
+- [ ] Update docs/architecture.md with detailed unit + integration test coverage
 - [ ] Write README.md — setup instructions (docker-compose up, seed, env vars), architecture overview, test commands
-- [ ] Write AI usage note — tools used, how they helped, where I overrode output (in README or separate file)
+- [ ] Write AI usage note — scaffold section in README.md (tools used, how they helped, where I overrode output)
 - [ ] Review DECISIONS.md completeness — ensure all trade-offs documented
 - [ ] Clean git history — ensure meaningful messages, no giant commits
 - [ ] Final `docker-compose up --build` smoke test

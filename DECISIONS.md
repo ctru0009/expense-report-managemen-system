@@ -98,13 +98,13 @@ These decisions define how the expense report state machine works and what const
 
 ## API & Security
 
-### 11. RBAC Middleware Built, Admin Route Wiring Deferred
+### 11. RBAC Middleware with Role-Typed Enforcement
 
-**What:** The `requireRole()` middleware is implemented and ready, but no routes currently use it. Admin endpoints (`/api/admin/*`) are planned for Phase 5, and that's where the middleware will be wired.
+**What:** The `requireRole()` middleware accepts Prisma's `Role` enum (`'USER' | 'ADMIN'`), not arbitrary strings. All admin routes use `requireRole('ADMIN')`. Unauthenticated requests hit the middleware return a 401 (not 403), because the semantic distinction matters: 401 = "you are not logged in", 403 = "you are logged in but lack permission."
 
-**Why:** Building the RBAC infrastructure early ensures auth-protected endpoints are consistent when added. The gap is a phase dependency, not an oversight — the `requireRole('admin')` guard will be applied to all admin routes in Phase 5.
+**Why:** Using `Role` enum types in `requireRole()` prevents silent mismatches from typos (e.g., `requireRole('admin')` lowercase would be a compile error since `Role` only accepts `'USER' | 'ADMIN'`). The 401/403 distinction follows HTTP semantics and helps clients decide whether to re-authenticate vs. give up.
 
-**Trade-off:** Until Phase 5, any authenticated user could theoretically access an admin route if one existed. Since no admin routes exist yet, there's no actual security gap.
+**Trade-off:** The middleware depends on Prisma's generated `Role` type. If roles change in the schema, the middleware type updates automatically, but the route call sites must also update. This is acceptable — role changes are rare and a compile error is preferable to a silent runtime failure.
 
 ### 12. Admin User via Seed Script
 
@@ -146,11 +146,27 @@ These decisions define how the expense report state machine works and what const
 
 **Trade-off:** Local filesystem storage doesn't scale horizontally — if you run multiple backend instances, they won't share uploads. For a single-instance demo, this is fine. Production would use S3 or similar.
 
+### 17. Transaction-Wrapped Admin Approve/Reject
+
+**What:** The `approveReport()` and `rejectReport()` service functions read the report status and update it inside a single `prisma.$transaction` (interactive transaction), not as separate read-then-write operations.
+
+**Why:** A read-then-write pattern has a TOCTOU (time-of-check-time-of-use) race condition: two concurrent admin requests (approve + reject) could both read `SUBMITTED`, both pass the state machine validation, and whichever update runs second would silently overwrite the first. Wrapping in a transaction ensures the read and write happen atomically — the second transaction would see the already-updated status and fail the state machine check.
+
+**Trade-off:** Interactive transactions hold a database connection for the duration of the read+compute+write cycle. For approval/rejection (which are infrequent, fast operations), this is negligible. A more aggressive approach would use database-level `SELECT ... FOR UPDATE` row locks, but Prisma's interactive transactions provide sufficient isolation for this scale.
+
+### 18. Zod UUID Param Validation as Defense-in-Depth
+
+**What:** All admin route `:id` parameters are validated against `z.string().uuid()` before reaching the service layer. Invalid UUIDs return 400 `VALIDATION_ERROR` instead of leaking as Prisma internal errors (500).
+
+**Why:** Without param validation, a non-UUID string like `/api/admin/reports/not-a-uuid` causes Prisma to throw a `PrismaClientValidationError`, which isn't caught by the error handler's `PrismaClientKnownRequestError` mapping. The result is a generic 500 `INTERNAL_ERROR` response — misleading for the client and noisy in logs. Validating at the route layer returns a proper 400 before the query ever executes.
+
+**Trade-off:** One extra Zod schema per route with `:id` params (currently only admin routes). The same pattern applies to report and item routes, but those already rely on Prisma's `findUnique` returning `null` (→ `NotFoundError` 404) because they use UUID primary keys — non-UUID inputs naturally fail the lookup. Admin routes are singled out because the error handler's gap is most visible there. A global `validateParamId` middleware for all `:id` routes would be more consistent but adds cross-cutting configuration for marginal benefit.
+
 ---
 
 ## Frontend
 
-### 17. Stitch Mockups Are Visual Specs, Not Product Requirements
+### 19. Stitch Mockups Are Visual Specs, Not Product Requirements
 
 **What:** The Stitch design exports guide layout and styling, but some UI artifacts in the mockups are not implemented as real behavior. For example, the signup role selector is decorative — roles are not user-chosen during signup.
 
@@ -158,7 +174,7 @@ These decisions define how the expense report state machine works and what const
 
 **Trade-off:** Minor visual differences from the mockups where business logic contradicts prototype artifacts.
 
-### 18. Report Create as Page, Not Modal
+### 20. Report Create as Page, Not Modal
 
 **What:** Creating a report navigates to `/reports/new` instead of opening a modal over the report list.
 
@@ -166,7 +182,7 @@ These decisions define how the expense report state machine works and what const
 
 **Trade-off:** One extra navigation away from the report list. Acceptable for such a simple form.
 
-### 19. Stats Cards Derived Client-Side
+### 21. Stats Cards Derived Client-Side
 
 **What:** The summary cards on the report list (Total Outstanding, Draft count, In Review count, Approved YTD) are computed from the fetched report list in the frontend, not from a dedicated API endpoint.
 
@@ -174,7 +190,15 @@ These decisions define how the expense report state machine works and what const
 
 **Trade-off:** Won't scale if the dataset grows significantly. The fix is straightforward — add a `/api/reports/stats` endpoint and swap the client-side computation.
 
-### 24. No Real-Time Updates — Manual Refresh Only
+### 22. Audit Completion Counts Rejection as Reviewed
+
+**What:** The admin dashboard "Audit Completion %" is calculated as `(approvedCount + rejectedCount) / (submittedCount + approvedCount + rejectedCount)`. Both approved and rejected reports count as "reviewed" in the numerator; only submitted (pending) reports count as unreviewed.
+
+**Why:** An admin who rejects a report has performed a review — the report was evaluated and a decision was made. Counting only approvals as "reviewed" penalized the audit completion metric when reports were rejected, which is nonsensical: a rejection *is* an audit action, not a failure to act.
+
+**Trade-off:** The metric conflates "quality of review" with "completion of review." A high audit completion % could mask a scenario where admins are blindly rejecting everything. A future improvement would separate "review rate" (reviewed / total actionable) from "approval rate" (approved / reviewed).
+
+### 23. No Real-Time Updates — Manual Refresh Only
 
 **What:** When an admin changes a report's status (approve/reject) or a user adds a new item, other views showing the same data do not update automatically. Users must manually navigate or refresh to see changes.
 
@@ -186,7 +210,7 @@ These decisions define how the expense report state machine works and what const
 
 ## Infrastructure
 
-### 20. Monorepo Without Workspace Tooling
+### 24. Monorepo Without Workspace Tooling
 
 **What:** Backend and frontend are separate directories with their own `package.json`, managed independently. No Lerna, Nx, or Turborepo.
 
@@ -194,7 +218,7 @@ These decisions define how the expense report state machine works and what const
 
 **Trade-off:** No shared TypeScript types between backend and frontend — each mirrors its own version. Acceptable for this scope.
 
-### 21. Docker Gotchas: Postgres Health Check + Alpine OpenSSL
+### 25. Docker Gotchas: Postgres Health Check + Alpine OpenSSL
 
 **What:** Two infrastructure decisions that aren't obvious from the code:
 
@@ -208,7 +232,7 @@ These decisions define how the expense report state machine works and what const
 
 ## AI Extraction
 
-### 22. Synchronous Receipt Extraction
+### 26. Synchronous Receipt Extraction
 
 **What:** Receipt extraction runs synchronously during the upload request. The endpoint accepts the file, sends it to the LLM, and returns extracted fields in the response.
 
@@ -216,7 +240,7 @@ These decisions define how the expense report state machine works and what const
 
 **Trade-off:** The request blocks for the duration of the LLM call. If the LLM is slow or the file is large, the user waits. With more time, a job queue (Redis + BullMQ) would make this async with immediate upload response and polling for results.
 
-### 23. Abstract Extraction Interface for Provider Swapping
+### 27. Abstract Extraction Interface for Provider Swapping
 
 **What:** The AI extraction service is abstracted behind an `IExtractionService` interface with a factory function (`getExtractionService()`). Two implementations exist: `OpenAIExtractionService` (real GPT-4o-mini calls) and `MockExtractionService` (returns static data). The factory selects based on `OPENAI_API_KEY`: real key → OpenAI, empty or `dummy` → Mock. An `OPENAI_BASE_URL` env var supports any OpenAI-compatible API endpoint without code changes.
 
@@ -224,7 +248,15 @@ These decisions define how the expense report state machine works and what const
 
 **Trade-off:** The `IExtractionService` interface only has one production implementation today. The abstraction cost is minimal (one interface file + one factory file), but the `OPENAI_BASE_URL` env var means you must use an OpenAI-compatible endpoint. True Anthropic/Claude support would require a new implementation class — roughly 50 lines following the existing pattern. This is an acceptable trade-off: the 80% case (OpenAI or OpenAI-compatible providers) works with just an env var, and the remaining 20% (incompatible providers) has a clear extension point.
 
-### 24. Extracted recomputeTotal for Testability
+### 28. Deferred Receipt Upload for New Items
+
+**What:** When creating a new expense item, the receipt file is saved in local state (`pendingFile`) and uploaded *after* the item is saved to the database. For editing existing items, the receipt is uploaded immediately with AI extraction. If receipt upload fails after item creation, the user is shown an error message explaining the item was saved but the receipt failed, and they can re-upload by editing the item.
+
+**Why:** The receipt upload endpoint requires an existing item ID (`POST /api/reports/:reportId/items/:itemId/receipt`). A new item doesn't have an ID until it's created. Two alternatives were considered: (1) create the item first, then upload — which is what we do, and (2) create a "draft" item server-side before the form is submitted. Option 2 would enable pre-save extraction but adds a "phantom item" lifecycle that complicates the API and UX (when does a draft item get cleaned up if the user cancels?).
+
+**Trade-off:** New items don't get AI pre-fill from receipts — the user fills the form manually, and extraction runs after save. This is a meaningful UX gap: the core value of AI extraction (reducing manual data entry) is lost for the initial creation. However, this only affects the first save; subsequent edits of that item get the full upload-and-extract flow. A future improvement would be a two-phase endpoint: `POST /api/reports/:reportId/items/draft` → upload+extract → `PUT /api/.../items/:id` to finalize.
+
+### 29. Extracted recomputeTotal for Testability
 
 **What:** `recomputeTotal` was extracted from `item.service.ts` into `item.utils.ts`, following the same pattern as `findOwnedReport` in `report.utils.ts`.
 
@@ -242,10 +274,10 @@ I would prioritize in this order, based on the ratio of user value to implementa
 
 **2. Background job queue for receipt processing.** This is the highest-value architectural improvement. Currently, receipt extraction blocks the HTTP request — if the LLM is slow or the file is large, the user stares at a spinner. With a job queue (Redis + BullMQ or PgBoss), uploads return immediately, the frontend polls for results, and failures can be retried gracefully. This also unlocks batch receipt uploads — a real user need when expense reports contain 10-20 receipts. The queue would add a `/api/receipts/:id/status` polling endpoint and a background worker process in Docker Compose.
 
-**2. Audit trail for status transitions.** A `StatusHistory` table recording `who`, `from_status`, `to_status`, `timestamp`, and an optional `reason` comment. This is the most important missing feature from a business perspective — real expense systems live and die by their audit records. Compliance teams need an immutable timeline, and approvers need to see what happened before they act. It would be surfaced in the admin report detail view as a timeline component. The schema is straightforward; the challenge is making it visible and useful rather than just stored.
+**3. Audit trail for status transitions.** A `StatusHistory` table recording `who`, `from_status`, `to_status`, `timestamp`, and an optional `reason` comment. This is the most important missing feature from a business perspective — real expense systems live and die by their audit records. Compliance teams need an immutable timeline, and approvers need to see what happened before they act. It would be surfaced in the admin report detail view as a timeline component. The schema is straightforward; the challenge is making it visible and useful rather than just stored.
 
-**3. Pagination and sorting on all list endpoints.** Currently lists return everything. For a real system with thousands of reports from many users, cursor-based pagination and sortable columns are essential. The backend change is straightforward (Prisma `cursor` + `take`), but the frontend needs careful UX — infinite scroll vs. page controls, filter + sort combinations, and loading states that feel responsive rather than janky.
+**4. Pagination and sorting on all list endpoints.** Currently lists return everything. For a real system with thousands of reports from many users, cursor-based pagination and sortable columns are essential. The backend change is straightforward (Prisma `cursor` + `take`), but the frontend needs careful UX — infinite scroll vs. page controls, filter + sort combinations, and loading states that feel responsive rather than janky.
 
-**4. Confidence scores on AI extraction.** Display per-field confidence from the LLM response so users can see which extracted values are uncertain. This builds trust in the AI feature — users are more likely to accept suggestions when they can see the model's certainty level. Implementation requires modifying the LLM prompt to request confidence scores and adding a visual indicator (color-coded borders, percentage badges) on each form field.
+**5. Confidence scores on AI extraction.** Display per-field confidence from the LLM response so users can see which extracted values are uncertain. This builds trust in the AI feature — users are more likely to accept suggestions when they can see the model's certainty level. Implementation requires modifying the LLM prompt to request confidence scores and adding a visual indicator (color-coded borders, percentage badges) on each form field.
 
-**5. Structured logging with request correlation IDs.** The current error handling is adequate for development but wouldn't survive production. Replacing `console.log` with Pino (structured JSON logs, request IDs, log levels) makes debugging user-reported issues tractable. Correlation IDs that flow from the frontend request header through to the database query would tie scattered log lines into a coherent request trace.
+**6. Structured logging with request correlation IDs.** The current error handling is adequate for development but wouldn't survive production. Replacing `console.log` with Pino (structured JSON logs, request IDs, log levels) makes debugging user-reported issues tractable. Correlation IDs that flow from the frontend request header through to the database query would tie scattered log lines into a coherent request trace.
