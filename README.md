@@ -2,7 +2,32 @@
 
 A full-stack expense report management system with JWT auth, state-machine-driven workflows, receipt upload with AI extraction, and admin review.
 
-![Admin Dashboard](img/admin-dashboard.png)
+## Screenshots
+
+<table>
+  <tr>
+    <td align="center"><b>Login</b></td>
+    <td align="center"><b>My Reports</b></td>
+  </tr>
+  <tr>
+    <td><img src="img/login.png" alt="Login" width="480"/></td>
+    <td><img src="img/my-reports.png" alt="My Reports" width="480"/></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Report Detail (Draft)</b></td>
+    <td align="center"><b>AI Receipt Extraction</b></td>
+  </tr>
+  <tr>
+    <td><img src="img/report-detail.png" alt="Report Detail" width="480"/></td>
+    <td><img src="img/ai-extraction.png" alt="AI Extraction" width="480"/></td>
+  </tr>
+  <tr>
+    <td align="center" colspan="2"><b>Admin Dashboard</b></td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center"><img src="img/admin-dashboard.png" alt="Admin Dashboard" width="960"/></td>
+  </tr>
+</table>
 
 ## Quick Start
 
