@@ -1,347 +1,301 @@
 # DECISIONS.md
 
-Every decision below follows the same format: **What** we did, **Why** we did it, and the **Trade-off** we accepted. Items are grouped by domain so a reader can find relevant context quickly.
+Each entry: **What**, **Why**, **Trade-off**. Grouped by domain.
 
 ---
 
 ## Stack Choices
 
-The stack was chosen for speed in a time-boxed exercise — one language across the stack, minimal configuration, and productive tooling.
+Stack chosen for speed — minimal configuration, productive tooling.
 
 ### 1. Node.js + Express
 
 **What:** Node.js backend with Express (not Fastify or NestJS).
 
-**Why:** One language across the full stack reduces context-switching. Express with a clean folder structure achieves separation of concerns without NestJS's decorator/DI ceremony. Fastify's benchmark advantage is irrelevant at this scale.
+**Why:** One language across the stack reduces context-switching. Express with a clean folder structure achieves separation of concerns without NestJS's DI ceremony. Fastify's benchmark advantage is irrelevant at this scale.
 
-**Trade-off:** Express has no built-in schema validation or dependency injection — we add Zod for validation and keep services thin. Worth it to avoid framework overhead in a 6-hour project.
+**Trade-off:** No built-in schema validation or DI — Zod fills the gap. Worth it to avoid framework overhead in a 6-hour project.
 
 ### 2. Prisma
 
 **What:** Prisma ORM (not TypeORM).
 
-**Why:** Prisma's schema-first approach (`schema.prisma` → generated client) produces type-safe queries with zero boilerplate. For a domain with clear relationships (User → Report → Item) and computed fields that need transactions, Prisma's transaction API is cleaner than TypeORM's decorator-based entities.
+**Why:** Schema-first approach produces type-safe queries with zero boilerplate. Transaction API is cleaner than TypeORM's decorator entities for a domain with computed fields.
 
-**Trade-off:** Prisma's query engine is a native binary — it requires OpenSSL on Alpine images and adds ~50MB to the Docker image. Acceptable for this scope.
+**Trade-off:** Query engine is a native binary — requires OpenSSL on Alpine and adds ~50MB to the Docker image. Acceptable for this scope.
 
 ### 3. React + Vite
 
 **What:** React 18 with Vite (not Vue, not CRA/Webpack).
 
-**Why:** React's JSX maps directly to the Stitch-exported HTML prototypes — copy-paste HTML into JSX, add state. Vue's template syntax adds a translation step. Vite needs zero config for React + TypeScript and starts instantly; CRA is deprecated, and Webpack configs are a time sink.
+**Why:** JSX maps directly to Stitch HTML prototypes — copy-paste, add state. Vue's templates add a translation step. Vite needs zero config and starts instantly; CRA is deprecated.
 
-**Trade-off:** React's mental model (hooks, re-renders) is more complex than Vue's reactivity system for simple forms. Not a problem at this scale.
+**Trade-off:** React's hooks/re-render mental model is more complex than Vue's reactivity for simple forms. Not a problem at this scale.
 
 ### 4. Tailwind CSS
 
 **What:** Tailwind for styling (not CSS Modules, styled-components, or BEM).
 
-**Why:** Eliminates naming/organization decisions for CSS. The Stitch design system's tonal palette maps directly to Tailwind custom colors. For a 6-hour exercise, not debating CSS methodology is a real time saving.
+**Why:** Eliminates naming/organization decisions. Stitch's tonal palette maps directly to Tailwind custom colors.
 
-**Trade-off:** Utility classes can make JSX verbose. Acceptable trade-off for rapid prototyping.
+**Trade-off:** Utility classes make JSX verbose. Acceptable trade-off for rapid prototyping.
 
 ---
 
 ## Domain & Business Logic
 
-These decisions define how the expense report state machine works and what constitutes valid domain behavior.
+### 5. REJECTED → DRAFT: Explicit Reopen for Items, Free Metadata Edits
 
-### 5. REJECTED → DRAFT via Explicit Reopen Action
+**What:** When an admin rejects a report, the user must explicitly reopen to DRAFT (`POST /api/reports/:id/reopen`) before editing items. Title and description edits remain allowed in REJECTED without reopening.
 
-**What:** When an admin rejects a report, the user must click "Reopen to Draft" before editing. The transition is a deliberate `POST /api/reports/:id/reopen`, not an implicit flip on first edit.
+**Why:** The spec diagram shows REJECTED → DRAFT as a distinct arrow, implying deliberate action. Item mutations change financial data and affect `totalAmount`, requiring an explicit confirmation gate. Metadata edits are non-financial and safe without a state transition — revising a rejected report's title shouldn't trigger a status change.
 
-**Why:** The spec diagram shows REJECTED → DRAFT as a distinct arrow, implying a deliberate action. An implicit flip (editing an item auto-transitions to DRAFT) risks accidental state changes — a user browsing a rejected report shouldn't silently change its status.
-
-**Trade-off:** One extra endpoint and one extra UI button. Worth it for clarity and to prevent unintended state transitions.
+**Trade-off:** One extra click before editing items on a rejected report. Intentional — reopen is a confirmation gate before modifying financial data.
 
 ### 6. Total Amount: Stored + Recomputed in Transaction
 
-**What:** `ExpenseReport.totalAmount` is a stored database column, recomputed inside a Prisma transaction whenever an expense item is added, modified, or deleted.
+**What:** `totalAmount` is a stored column, recomputed inside a Prisma transaction on every item add/update/delete.
 
-**Why:** A stored column avoids N+1 queries when listing reports with amounts. The transaction ensures the total is always consistent with the sum of items. For this scale, recomputing on every change is negligible.
+**Why:** Stored column avoids N+1 queries when listing. Transaction ensures total always equals sum of items.
 
-**Trade-off:** If items are ever modified outside the service layer (e.g., a raw SQL migration), the total could drift. Mitigated by keeping all item mutations inside the service.
+**Trade-off:** Items modified outside the service layer (e.g., raw SQL migration) could drift the total. Mitigated by keeping all item mutations inside the service.
 
 ### 7. Single Currency Display (No Conversion)
 
-**What:** Items store a `currency` field (ISO 4217), but the report `totalAmount` is a single numeric sum without currency conversion. All items are assumed to be in the same currency.
+**What:** Items store a `currency` field (ISO 4217), but `totalAmount` sums without conversion. All items assumed same currency.
 
-**Why:** Multi-currency conversion requires an exchange rate service and adds significant complexity for little value in a demo. The `currency` field on items supports future expansion.
+**Why:** Multi-currency conversion requires an exchange rate service and adds significant complexity for little demo value.
 
-**Trade-off:** If a user adds items in different currencies, the total will be numerically meaningless. Acceptable for this scope.
+**Trade-off:** Items in different currencies produce a meaningless total. Acceptable for this scope.
 
 ### 8. Categories: Fixed Enum
 
 **What:** Expense categories are a Prisma enum: `TRAVEL`, `MEALS`, `OFFICE_SUPPLIES`, `SOFTWARE`, `HARDWARE`, `MARKETING`, `OTHER`.
 
-**Why:** A fixed set is simpler, enables filtering, and avoids a separate Categories table with its own CRUD. The `OTHER` option catches anything that doesn't fit.
+**Why:** Fixed set is simpler, enables filtering, and avoids a separate Categories table with its own CRUD.
 
-**Trade-off:** Users cannot define custom categories. If the domain expands, the enum requires a migration.
+**Trade-off:** Users cannot define custom categories. Domain expansion requires a migration.
 
 ### 9. Block Empty Report Submission
 
-**What:** The `submit()` endpoint returns a `ValidationError` if the report has zero expense items.
+**What:** `submit()` returns `ValidationError` if the report has zero items.
 
-**Why:** Submitting an empty expense report has no domain value — it would just create noise for admins to review. This validation lives in the service layer because it requires a database query to check item count.
+**Why:** Submitting an empty report has no domain value — it creates noise for admins to review.
 
-**Trade-off:** Extra validation rule not explicitly in the spec. The rule is obvious in hindsight and prevents meaningless submissions.
-
-### 10. Report Field Edits Allowed in REJECTED, Item Edits Require Reopen
-
-**What:** Updating a report's `title` and `description` is allowed in both DRAFT and REJECTED status. Editing items (add/update/delete) is only allowed in DRAFT status — the user must explicitly reopen a rejected report to DRAFT before items become editable. Both the backend (`canEditItems`) and frontend enforce this consistently.
-
-**Why:** The spec diagram shows REJECTED → DRAFT as a distinct arrow, implying a deliberate action. Item mutations change financial data and affect `totalAmount`, so they require the explicit reopen step to prevent accidental state changes. Metadata edits (title, description) are non-financial and safe to allow on REJECTED reports — a user browsing a rejected report should be able to revise the title without a state transition.
-
-**Trade-off:** Users must click "Reopen to Draft" before editing items on a rejected report — one extra step. This is intentional: the reopen action serves as a confirmation gate, ensuring the user is aware they are changing the report state before modifying financial data.
+**Trade-off:** The spec implicitly allows empty submissions; this blocks them without explicit spec authorization.
 
 ---
 
 ## API & Security
 
-### 11. RBAC Middleware with Role-Typed Enforcement
+### 10. RBAC Middleware with Role-Typed Enforcement
 
-**What:** The `requireRole()` middleware accepts Prisma's `Role` enum (`'USER' | 'ADMIN'`), not arbitrary strings. All admin routes use `requireRole('ADMIN')`. Unauthenticated requests hit the middleware return a 401 (not 403), because the semantic distinction matters: 401 = "you are not logged in", 403 = "you are logged in but lack permission."
+**What:** `requireRole()` accepts Prisma's `Role` enum (`'USER' | 'ADMIN'`), not arbitrary strings. Unauthenticated requests return 401, not 403.
 
-**Why:** Using `Role` enum types in `requireRole()` prevents silent mismatches from typos (e.g., `requireRole('admin')` lowercase would be a compile error since `Role` only accepts `'USER' | 'ADMIN'`). The 401/403 distinction follows HTTP semantics and helps clients decide whether to re-authenticate vs. give up.
+**Why:** Enum types prevent silent mismatches from typos — wrong casing is a compile error. 401/403 distinction helps clients decide whether to re-authenticate vs. give up.
 
-**Trade-off:** The middleware depends on Prisma's generated `Role` type. If roles change in the schema, the middleware type updates automatically, but the route call sites must also update. This is acceptable — role changes are rare and a compile error is preferable to a silent runtime failure.
+**Trade-off:** Middleware depends on Prisma's generated Role type. Schema changes require updating call sites, but compile errors are preferable to silent runtime failures.
 
-### 12. Admin User via Seed Script
+### 11. Admin User via Seed Script
 
-**What:** Admin users are created via `npm run prisma:seed`. There is no admin registration endpoint.
+**What:** Admin users created via `npm run prisma:seed`. No admin registration endpoint.
 
-**Why:** In production, admin provisioning would be gated behind an invite/permissions system. For this exercise, a seed script is sufficient and avoids building an invite flow.
+**Why:** Admin provisioning would need an invite/permissions system in production. A seed script is sufficient for the exercise.
 
-**Trade-off:** The seed creates a known admin email/password in the database. Acceptable for a demo; unacceptable for production.
+**Trade-off:** Known admin email/password in the database. Acceptable for a demo; not for production.
 
-### 13. Single JWT Token (No Refresh)
+### 12. Single JWT Token (No Refresh)
 
-**What:** One JWT with a 7-day expiry, stored in localStorage. No refresh token rotation.
+**What:** One JWT with 7-day expiry in localStorage. No refresh token rotation.
 
-**Why:** Access + refresh token rotation adds a `/auth/refresh` endpoint, rotation logic, and frontend interceptor handling. For a take-home exercise where the only consumer is one browser tab, a long-lived token is acceptable. A real system would use httpOnly cookies with short-lived access tokens.
+**Why:** Token rotation adds a refresh endpoint, rotation logic, and frontend interceptors. For a single-browser-tab demo, a long-lived token is sufficient.
 
-**Trade-off:** A compromised token is valid for 7 days. localStorage is vulnerable to XSS. Both are acceptable risks for a demo, not for production.
+**Trade-off:** Compromised token valid for 7 days; localStorage vulnerable to XSS. Acceptable for a demo.
 
-### 14. No Pagination on List Endpoints
+### 13. No Pagination on List Endpoints
 
-**What:** List endpoints return all results. No `?page=` or `?limit=` parameters.
+**What:** List endpoints return all results. No `?page=` or `?limit=`.
 
-**Why:** This is a demo with seed data — there won't be thousands of records. Pagination adds backend query logic, frontend page controls, and testing surface that doesn't demonstrate architectural judgment.
+**Why:** Demo with seed data — no thousands of records. Pagination adds query logic, page controls, and testing surface that doesn't demonstrate architectural judgment.
 
-**Trade-off:** Does not scale. The "one more day" section calls this out as the first infrastructure improvement.
+**Trade-off:** Does not scale. Called out as the first improvement in "One More Day."
 
-### 15. Nested Item Routes with Defense-in-Depth
+### 14. Nested Item Routes with Defense-in-Depth
 
-**What:** Item routes are mounted at `/api/reports/:reportId/items`. The service verifies each item belongs to the specified report (`WHERE id = ? AND reportId = ?`).
+**What:** Item routes at `/api/reports/:reportId/items`. Service verifies each item belongs to the specified report (`WHERE id = ? AND reportId = ?`).
 
-**Why:** Items have no independent existence — every item operation requires the parent report's context (ownership check, status validation, total recomputation). Nesting makes the relationship explicit. The extra `reportId` check is defense-in-depth: even if a client manipulates the URL to target an item on a different report, the database query will fail.
+**Why:** The extra `reportId` check is defense-in-depth against URL manipulation targeting an item on a different report.
 
-**Trade-off:** One extra `WHERE` clause per item mutation. Negligible cost for stronger security.
+**Trade-off:** One extra WHERE clause per item mutation. Negligible cost.
 
-### 16. Receipt Storage: Local Filesystem
+### 15. Receipt Storage: Local Filesystem
 
-**What:** Receipt files are uploaded via multer and stored on the local filesystem in `backend/uploads/`. No cloud storage or MinIO.
+**What:** Receipts stored on local filesystem in `backend/uploads/`. No cloud storage.
 
-**Why:** The spec explicitly allows local filesystem storage. Multer is the standard Express middleware for multipart/form-data. Files are served statically from the same backend server.
+**Why:** Spec explicitly allows local filesystem. Sufficient for single-instance deployment.
 
-**Trade-off:** Local filesystem storage doesn't scale horizontally — if you run multiple backend instances, they won't share uploads. For a single-instance demo, this is fine. Production would use S3 or similar.
+**Trade-off:** Won't scale horizontally — multiple instances won't share uploads. Production would use S3.
 
-### 17. Transaction-Wrapped Admin Approve/Reject
+### 16. Transaction-Wrapped Admin Approve/Reject
 
-**What:** The `approveReport()` and `rejectReport()` service functions read the report status and update it inside a single `prisma.$transaction` (interactive transaction), not as separate read-then-write operations.
+**What:** `approveReport()` and `rejectReport()` run read+write inside a single `prisma.$transaction`.
 
-**Why:** A read-then-write pattern has a TOCTOU (time-of-check-time-of-use) race condition: two concurrent admin requests (approve + reject) could both read `SUBMITTED`, both pass the state machine validation, and whichever update runs second would silently overwrite the first. Wrapping in a transaction ensures the read and write happen atomically — the second transaction would see the already-updated status and fail the state machine check.
+**Why:** Read-then-write has a TOCTOU race — concurrent approve+reject could both read SUBMITTED and the second silently overwrites. Transaction makes it atomic.
 
-**Trade-off:** Interactive transactions hold a database connection for the duration of the read+compute+write cycle. For approval/rejection (which are infrequent, fast operations), this is negligible. A more aggressive approach would use database-level `SELECT ... FOR UPDATE` row locks, but Prisma's interactive transactions provide sufficient isolation for this scale.
+**Trade-off:** Interactive transactions hold a DB connection for the read+compute+write cycle. Negligible for infrequent approval operations.
 
-### 18. Zod UUID Param Validation as Defense-in-Depth
+### 17. Zod UUID Param Validation as Defense-in-Depth
 
-**What:** All admin route `:id` parameters are validated against `z.string().uuid()` before reaching the service layer. Invalid UUIDs return 400 `VALIDATION_ERROR` instead of leaking as Prisma internal errors (500).
+**What:** Admin route `:id` params validated as UUID before reaching the service layer. Invalid UUIDs return 400, not 500.
 
-**Why:** Without param validation, a non-UUID string like `/api/admin/reports/not-a-uuid` causes Prisma to throw a `PrismaClientValidationError`, which isn't caught by the error handler's `PrismaClientKnownRequestError` mapping. The result is a generic 500 `INTERNAL_ERROR` response — misleading for the client and noisy in logs. Validating at the route layer returns a proper 400 before the query ever executes.
+**Why:** Non-UUID input causes Prisma to throw an unhandled internal error (500) instead of a proper validation error. Route-layer validation returns 400 before the query executes.
 
-**Trade-off:** One extra Zod schema per route with `:id` params (currently only admin routes). The same pattern applies to report and item routes, but those already rely on Prisma's `findUnique` returning `null` (→ `NotFoundError` 404) because they use UUID primary keys — non-UUID inputs naturally fail the lookup. Admin routes are singled out because the error handler's gap is most visible there. A global `validateParamId` middleware for all `:id` routes would be more consistent but adds cross-cutting configuration for marginal benefit.
+**Trade-off:** One extra Zod schema per `:id` route on admin endpoints. Report/item routes don't need this — Prisma's findUnique returns null for non-UUID inputs, producing a clean 404.
 
 ---
 
 ## Frontend
 
-### 19. Stitch Mockups Are Visual Specs, Not Product Requirements
+### 18. Stitch Mockups Are Visual Specs, Not Product Requirements
 
-**What:** The Stitch design exports guide layout and styling, but some UI artifacts in the mockups are not implemented as real behavior. For example, the signup role selector is decorative — roles are not user-chosen during signup.
+**What:** Stitch exports guide layout and styling, but some mockup artifacts are not real behavior (e.g., signup role selector is decorative — roles aren't user-chosen).
 
-**Why:** The mockups are quick visual specs, not authoritative business logic. Admin access is seeded and controlled server-side, not selected by users. Implementation follows security rules over prototype details.
+**Why:** Mockups are visual specs, not business logic. Admin access is seeded server-side. Security rules override prototype artifacts.
 
-**Trade-off:** Minor visual differences from the mockups where business logic contradicts prototype artifacts.
+**Trade-off:** Minor visual differences where business logic contradicts prototype details.
 
-### 20. Report Create as Page, Not Modal
+### 19. Report Create as Page, Not Modal
 
-**What:** Creating a report navigates to `/reports/new` instead of opening a modal over the report list.
+**What:** Creating a report navigates to `/reports/new` instead of a modal.
 
-**Why:** Modals add state management complexity (open/close, backdrop, focus trap) for marginal UX benefit. A page route is simpler, supports direct URL navigation, and works naturally with the browser back button. The form has only two fields — a modal's "in-context" feel isn't necessary.
+**Why:** Modals add state management complexity (open/close, backdrop, focus trap) for marginal UX benefit. A page route supports direct URL navigation and the browser back button.
 
-**Trade-off:** One extra navigation away from the report list. Acceptable for such a simple form.
+**Trade-off:** One extra navigation away from the list. Acceptable for a two-field form.
 
-### 21. Stats Cards Derived Client-Side
+### 20. Stats Cards Derived Client-Side
 
-**What:** The summary cards on the report list (Total Outstanding, Draft count, In Review count, Approved YTD) are computed from the fetched report list in the frontend, not from a dedicated API endpoint.
+**What:** Summary cards (Total Outstanding, Draft count, In Review count, Approved YTD) computed from the fetched report list in JS, not from a dedicated endpoint.
 
-**Why:** The dataset is small (no pagination per decision 14), so computing sums and counts in JavaScript is negligible. Adding a backend aggregation endpoint would require a new route and service method for data that's already available client-side.
+**Why:** Dataset is small (no pagination per decision 13). Client-side computation is negligible vs. adding a backend aggregation endpoint.
 
-**Trade-off:** Won't scale if the dataset grows significantly. The fix is straightforward — add a `/api/reports/stats` endpoint and swap the client-side computation.
+**Trade-off:** Won't scale with significant dataset growth. Fix: add a `/api/reports/stats` endpoint.
 
-### 22. Audit Completion Counts Rejection as Reviewed
+### 21. Audit Completion Counts Rejection as Reviewed
 
-**What:** The admin dashboard "Audit Completion %" is calculated as `(approvedCount + rejectedCount) / (submittedCount + approvedCount + rejectedCount)`. Both approved and rejected reports count as "reviewed" in the numerator; only submitted (pending) reports count as unreviewed.
+**What:** Admin dashboard "Audit Completion %" = `(approved + rejected) / (submitted + approved + rejected)`. Both approved and rejected count as reviewed.
 
-**Why:** An admin who rejects a report has performed a review — the report was evaluated and a decision was made. Counting only approvals as "reviewed" penalized the audit completion metric when reports were rejected, which is nonsensical: a rejection *is* an audit action, not a failure to act.
+**Why:** Rejecting a report is an audit action — the report was evaluated and a decision was made. Counting only approvals as "reviewed" is nonsensical: rejection is a decision, not a failure to act.
 
-**Trade-off:** The metric conflates "quality of review" with "completion of review." A high audit completion % could mask a scenario where admins are blindly rejecting everything. A future improvement would separate "review rate" (reviewed / total actionable) from "approval rate" (approved / reviewed).
+**Trade-off:** Metric conflates review completion with review quality. High completion could mask blind rejection. A future fix would separate review rate from approval rate.
 
-### 23. No Real-Time Updates — Manual Refresh Only
+### 22. No Real-Time Updates — Manual Refresh Only
 
-**What:** When an admin changes a report's status (approve/reject) or a user adds a new item, other views showing the same data do not update automatically. Users must manually navigate or refresh to see changes.
+**What:** Status changes don't auto-update other views. Manual refresh required.
 
-**Why:** AI-assisted development suggested several real-time approaches (polling, React Query with background refetch, SSE, WebSockets) to keep the UI in sync. Each adds meaningful complexity — new dependencies, connection lifecycle management, or backend event infrastructure — for marginal gain in a demo where a single user is testing workflows. Manual refresh is the simplest approach that works correctly today.
+**Why:** AI-assisted development suggested polling, React Query, SSE, and WebSockets. All add dependency/lifecycle complexity for a single-user demo where manual refresh is the correct approach — real-time infrastructure should only exist when real-time requirements exist.
 
-**Trade-off:** Stale data if a user and admin are both viewing the same report. Acceptable for a take-home exercise. A production system would add React Query with background refetch as a first step, then SSE or WebSockets if sub-second sync is required.
+**Trade-off:** Stale data if user and admin view the same report simultaneously. Production would add React Query with background refetch, then SSE for sub-second sync.
 
 ---
 
 ## Infrastructure
 
-### 24. Monorepo Without Workspace Tooling
+### 23. Monorepo Without Workspace Tooling
 
-**What:** Backend and frontend are separate directories with their own `package.json`, managed independently. No Lerna, Nx, or Turborepo.
+**What:** Backend and frontend are separate directories with own `package.json`. No Lerna, Nx, or Turborepo.
 
-**Why:** For a 2-app project, workspace tooling adds configuration overhead with no real benefit. Docker Compose handles orchestration for local development.
+**Why:** For a 2-app project, workspace tooling adds configuration overhead with no real benefit. Docker Compose handles orchestration.
 
-**Trade-off:** No shared TypeScript types between backend and frontend — each mirrors its own version. Acceptable for this scope.
+**Trade-off:** No shared TypeScript types between backend and frontend. Acceptable for this scope.
 
-### 25. Docker Gotchas: Postgres Health Check + Alpine OpenSSL
+### 24. Docker Gotchas: Health Check, Alpine OpenSSL, env_file
 
-**What:** Two infrastructure decisions that aren't obvious from the code:
+**What:** Three non-obvious Docker decisions: (1) `service_healthy` with `pg_isready` — bare `depends_on` causes migrate failures on fresh volumes. (2) Dockerfile installs `openssl` — Prisma links `libssl`, absent from Alpine. (3) `env_file` instead of hardcoded `environment:` block — `environment:` reads from host shell, not `.env`, so `LLM_API_KEY` in `.env` was invisible inside the container, causing Mock selection instead of real extraction.
 
-1. The backend `depends_on` Postgres with `condition: service_healthy` using a `pg_isready` health check, not a bare `depends_on`. A bare `depends_on` only waits for the container process to start — not for Postgres to finish `initdb` and accept connections. Fresh volumes would cause `prisma migrate deploy` to fail with `P1001: Can't reach database server`.
-
-2. The backend Dockerfile installs `openssl` via `apk add --no-cache openssl` before `npm ci`. Prisma's query engine links against `libssl`, which is absent from `node:20-alpine`, causing a crash at runtime.
-
-**Trade-off:** The health check adds ~5s to startup on fresh volumes. The OpenSSL package adds ~2MB to the image. Both are negligible.
+**Trade-off:** Health check adds ~5s startup; OpenSSL adds ~2MB; `env_file` requires `docker-compose up` on `.env` changes. `DATABASE_URL` in `.env` uses Docker-internal hostname, so local dev needs a different value.
 
 ---
 
 ## AI Extraction
 
-### 26. Synchronous Receipt Extraction
+### 25. Synchronous Receipt Extraction
 
-**What:** Receipt extraction runs synchronously during the upload request. The endpoint accepts the file, sends it to the LLM, and returns extracted fields in the response.
+**What:** Receipt extraction runs synchronously during the upload request. Response includes extracted fields.
 
-**Why:** For this scope, receipts are small files and LLM extraction typically completes in 2-5 seconds. A polling/async approach adds complexity (job queue, status polling, WebSocket) that isn't justified for the exercise. The frontend shows a loading spinner during upload.
+**Why:** Receipts are small, LLM extraction completes in 2-5s. Async adds job queue complexity unjustified for this exercise.
 
-**Trade-off:** The request blocks for the duration of the LLM call. If the LLM is slow or the file is large, the user waits. With more time, a job queue (Redis + BullMQ) would make this async with immediate upload response and polling for results.
+**Trade-off:** Request blocks during LLM call. With more time, Redis + BullMQ would make this async with polling for results.
 
-### 27. Abstract Extraction Interface for Provider Swapping
+### 26. Abstract Extraction Interface with OpenRouter Default
 
-**What:** The AI extraction service is abstracted behind an `IExtractionService` interface with a factory function (`getExtractionService()`). Two implementations exist: `OpenAIExtractionService` (real LLM calls via OpenAI-compatible SDK) and `MockExtractionService` (returns static data). The factory selects based on `LLM_API_KEY`: real key → OpenAI-compatible service, empty or `dummy` → Mock. The model and base URL are configurable via `LLM_MODEL` and `LLM_BASE_URL` env vars. The default configuration routes through OpenRouter to Google Gemini (`google/gemini-2.5-flash-lite`), not OpenAI directly.
+**What:** AI extraction behind `IExtractionService` with factory: real `LLM_API_KEY` → OpenAI-compatible service, empty/dummy → Mock. Default routes through OpenRouter to Gemini (`google/gemini-2.5-flash-lite`); `LLM_BASE_URL` and `LLM_MODEL` are env-configurable.
 
-**Why:** The assessment spec requires LLM-powered extraction, but the specific provider shouldn't be hardcoded. Three common scenarios need to work: (1) development without an API key, (2) OpenAI directly, (3) alternative providers via OpenRouter (Gemini, Claude, etc.) or locally via Ollama. The `openai` npm SDK supports custom base URLs natively, so any OpenAI-compatible endpoint works with zero code changes by setting `LLM_BASE_URL`. For providers with entirely different APIs (e.g., native Google AI SDK), adding a new `IExtractionService` implementation is a single file that plugs into the factory.
+**Why:** Provider shouldn't be hardcoded. The `openai` SDK supports custom base URLs natively — any OpenAI-compatible endpoint works with env vars only. OpenRouter's compatibility means Gemini, Claude, Llama, etc. all work with zero code changes. Non-compatible providers plug in as a new `IExtractionService` implementation.
 
-**Trade-off:** The `IExtractionService` interface only has one production implementation today. The abstraction cost is minimal (one interface file + one factory file), but the `LLM_BASE_URL` env var means you must use an OpenAI-compatible endpoint. True native Gemini/Anthropic SDK support would require a new implementation class — roughly 50 lines following the existing pattern. This is an acceptable trade-off: the 80% case (OpenAI or OpenAI-compatible providers like OpenRouter) works with just env vars, and the remaining 20% (incompatible native SDKs) has a clear extension point.
+**Trade-off:** Only one production implementation today. `LLM_BASE_URL` requires an OpenAI-compatible endpoint; incompatible SDKs need a new class (~50 lines). Depends on OpenRouter as a proxy — one extra network hop. Native SDK eliminates the proxy but adds single-provider complexity.
 
-### 27b. Gemini via OpenRouter (Not Native SDK)
+### 27. Extracted recomputeTotal for Testability
 
-**What:** The default LLM provider is Google Gemini (`google/gemini-2.5-flash-lite`) accessed through OpenRouter (`https://openrouter.ai/api/v1`), not via the `@google/generative-ai` SDK. The `openai` npm SDK is used as the client, pointing at the OpenRouter endpoint. Env vars use the `LLM_*` prefix (`LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL`) which fall back to `OPENAI_*` for backward compatibility.
+**What:** `recomputeTotal` extracted from `item.service.ts` into `item.utils.ts`.
 
-**Why:** Adding the `@google/generative-ai` SDK as a dependency would require a new `GeminiExtractionService` class, new factory branching logic, and a new env var (`LLM_PROVIDER`) to select which service to instantiate. OpenRouter exposes an OpenAI-compatible API, so the existing `OpenAIExtractionService` works with zero code changes — just set `LLM_BASE_URL` and `LLM_MODEL`. This also unlocks access to any model on OpenRouter (Claude, Llama, Mistral, etc.) with a single env var swap.
+**Why:** Private function inside `item.service.ts` was impossible to unit test without complex Prisma transaction mocking. Extraction enables direct testing with a mock transaction object.
 
-**Trade-off:** Depends on OpenRouter as a proxy — one extra network hop and an external dependency. If OpenRouter is down, extraction fails (the retry logic handles transient failures). A native Gemini SDK would eliminate the proxy and might offer Gemini-specific features (e.g., Google Search grounding), but adds significant code complexity for a single-provider integration. The OpenRouter approach is the "80/20" solution: 80% of the benefit (working Gemini extraction) with 20% of the code cost (zero new code). The factory pattern means adding a native SDK later is still straightforward.
-
-### 27c. Docker env_file Instead of Hardcoded environment Block
-
-**What:** The backend Docker service uses `env_file: ./backend/.env` to inject environment variables, with only Docker-specific overrides (`DATABASE_URL`, `UPLOAD_DIR`) in the `environment:` block. All other config (`LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL`, `JWT_SECRET`, etc.) comes from `backend/.env`.
-
-**Why:** Previously, the `docker-compose.yml` hardcoded `OPENAI_API_KEY: ${OPENAI_API_KEY:-sk-dummy}`, which resolved from the *host shell environment* — not from `backend/.env`. This meant `LLM_API_KEY` set in `.env` was invisible inside the container, causing the factory to select `MockExtractionService` and return sample data instead of real AI extraction. Using `env_file` directly reads `backend/.env` into the container, making the `.env` file the single source of truth for backend config. Docker-specific overrides (like `DATABASE_URL` with the Docker-internal `postgres` hostname) take precedence via `environment:` since `environment` overrides `env_file`.
-
-**Trade-off:** `env_file` is read at container start, not live — changing `.env` requires `docker-compose up` again (same as before). The `DATABASE_URL` in `backend/.env` uses the Docker-internal `postgres` hostname, so running the backend locally with `npm run dev` requires a different `DATABASE_URL` (e.g., `localhost:5432`). This is acceptable because the primary deployment is Docker, and local development can override via a separate `.env.local` or direct env var.
-
-### 28. ~~Deferred Receipt Upload for New Items~~ *(Superseded by Decision 30/33)*
-
-**What:** ~~When creating a new expense item, the receipt file is saved in local state (`pendingFile`) and uploaded *after* the item is saved to the database.~~ This approach was replaced by the Decoupled Extract-then-Confirm pattern (Decision 30) and Draft Item flow (Decision 33), which create the item immediately on receipt drop, enabling real-time AI pre-fill for both new and existing items.
-
-**Why:** The original design deferred upload to avoid creating items without user confirmation. This was too conservative — the UX cost (no AI pre-fill for new items, the primary use case) outweighed the data purity benefit. The new approach creates a draft item immediately, runs upload+extract, and deletes the draft if the user cancels.
-
-**Trade-off (original):** New items didn't get AI pre-fill from receipts. **Trade-off (new):** Draft items briefly exist as DB records with placeholder data. See Decision 33 for full analysis.
-
-### 29. Extracted recomputeTotal for Testability
-
-**What:** `recomputeTotal` was extracted from `item.service.ts` into `item.utils.ts`, following the same pattern as `findOwnedReport` in `report.utils.ts`.
-
-**Why:** `recomputeTotal` was a private function inside `item.service.ts`, making it impossible to unit test in isolation without complex Prisma transaction mocking. Extracting it as an exported utility enables direct testing with a mock transaction object — the same approach used for `findOwnedReport`.
-
-**Trade-off:** One extra file and import. The function could have been tested indirectly through the service with heavier mocking, but that would test the mocks more than the logic. Direct testing is clearer and more maintainable.
+**Trade-off:** One extra file and import. Direct testing is clearer than testing indirectly through the service with heavier mocking.
 
 ---
 
 ## If I Had One More Day
 
-I would prioritize in this order, based on the ratio of user value to implementation effort:
+Prioritized by user-value-to-effort ratio:
 
-**1. Real-time data synchronization.** Replace `useState`+`useEffect` fetching with React Query (TanStack Query) to get stale-while-revalidate semantics, automatic background refetching, and cache invalidation. This is the highest-impact UX improvement — currently, an admin approving a report doesn't reflect on the user's screen until they manually refresh. React Query would handle this with `refetchOnWindowFocus` and configurable `refetchInterval`, no backend changes required. If sub-second sync is needed, add a lightweight SSE endpoint (`GET /api/events`) that broadcasts change events to trigger targeted refetches.
+**1. Real-time data synchronization.** Replace `useState`+`useEffect` with React Query for stale-while-revalidate, background refetching, and cache invalidation. Highest-impact UX fix — currently, admin approval doesn't reflect on the user's screen until manual refresh. `refetchOnWindowFocus` handles this with no backend changes. SSE for sub-second sync if needed later.
 
-**2. Background job queue for receipt processing.** This is the highest-value architectural improvement. Currently, receipt extraction blocks the HTTP request — if the LLM is slow or the file is large, the user stares at a spinner. With a job queue (Redis + BullMQ or PgBoss), uploads return immediately, the frontend polls for results, and failures can be retried gracefully. This also unlocks batch receipt uploads — a real user need when expense reports contain 10-20 receipts. The queue would add a `/api/receipts/:id/status` polling endpoint and a background worker process in Docker Compose.
+**2. Background job queue for receipt processing.** Highest-value architectural improvement. Upload returns immediately, frontend polls for results, failures retry gracefully. Unlocks batch receipt uploads. Would add a `/api/receipts/:id/status` endpoint and a worker process in Docker Compose.
 
-**3. Audit trail for status transitions.** A `StatusHistory` table recording `who`, `from_status`, `to_status`, `timestamp`, and an optional `reason` comment. This is the most important missing feature from a business perspective — real expense systems live and die by their audit records. Compliance teams need an immutable timeline, and approvers need to see what happened before they act. It would be surfaced in the admin report detail view as a timeline component. The schema is straightforward; the challenge is making it visible and useful rather than just stored.
+**3. Audit trail for status transitions.** `StatusHistory` table recording who, from/to status, timestamp, and optional reason. Most important missing business feature — real expense systems need immutable timelines for compliance. Challenge is making it visible and useful, not just stored.
 
-**4. Pagination and sorting on all list endpoints.** Currently lists return everything. For a real system with thousands of reports from many users, cursor-based pagination and sortable columns are essential. The backend change is straightforward (Prisma `cursor` + `take`), but the frontend needs careful UX — infinite scroll vs. page controls, filter + sort combinations, and loading states that feel responsive rather than janky.
+**4. Pagination and sorting.** Cursor-based pagination with Prisma `cursor`+`take`. Backend is straightforward; frontend needs careful UX around infinite scroll vs. page controls, filter+sort combinations, and responsive loading states.
 
-**5. Confidence scores on AI extraction.** Display per-field confidence from the LLM response so users can see which extracted values are uncertain. This builds trust in the AI feature — users are more likely to accept suggestions when they can see the model's certainty level. Implementation requires modifying the LLM prompt to request confidence scores and adding a visual indicator (color-coded borders, percentage badges) on each form field.
+**5. Confidence scores on AI extraction.** Per-field confidence display builds trust in the AI feature — users accept suggestions more readily when certainty is visible. Modify the LLM prompt to request scores; add color-coded visual indicators per field.
 
-**6. Structured logging with request correlation IDs.** The current error handling is adequate for development but wouldn't survive production. Replacing `console.log` with Pino (structured JSON logs, request IDs, log levels) makes debugging user-reported issues tractable. Correlation IDs that flow from the frontend request header through to the database query would tie scattered log lines into a coherent request trace.
+**6. Structured logging with request correlation IDs.** Replace `console.log` with Pino for structured JSON logs, log levels, and request IDs. Correlation IDs flowing from frontend to DB queries tie scattered log lines into a coherent request trace.
+
+**7. UI/UX polish pass.** The current UI is functional but rough — inconsistent spacing, missing loading skeletons, no empty states, and gaps in mobile responsiveness. A dedicated polish pass would tighten component spacing, add skeleton loading states for every data fetch, design proper empty-state messages for lists, and ensure responsive layouts across breakpoints. High user-value, low technical-risk work that significantly improves perceived quality.
 
 ---
 
 ## AI Extraction v2 — Decoupled Extract-then-Confirm
 
-These decisions document the redesign of the AI extraction feature from a coupled upload-and-extract pattern to a decoupled three-phase pattern (upload → extract → apply). This redesign addresses three critical flaws in the original implementation: (1) new items never received AI pre-fill because extraction was deferred until after save, (2) extracted values silently overwrote user-typed data, and (3) re-extraction required deleting and re-uploading the same receipt.
+Redesign from a coupled upload-and-extract pattern to a decoupled three-phase pattern (upload → extract → apply), fixing: (1) new items never received AI pre-fill, (2) extracted values silently overwrote user data, (3) re-extraction required re-uploading.
 
-### 30. Decoupled Upload / Extract / Apply Pattern
+### 28. Decoupled Upload / Extract / Apply Pattern
 
-**What:** Receipt processing is split into three distinct operations: `POST /receipt` (saves file, sets `receiptUrl` — no extraction, no field mutation), `POST /receipt/extract` (read-only AI call, returns suggestions with confidence scores — no DB writes), and `POST /receipt/apply` (user explicitly accepts selected fields, which are then persisted to the item and total is recomputed). This replaces the previous atomic endpoint that combined all three into a single request.
+**What:** Receipt processing split into three operations: `POST /receipt` (save file, set receiptUrl — no extraction), `POST /receipt/extract` (read-only AI call, returns suggestions with confidence — no DB writes), `POST /receipt/apply` (user explicitly accepts selected fields for persistence and total recomputation).
 
-**Why:** The original design coupled three concerns that should be independent:
+**Why:** The original single-endpoint design had three flaws: (1) new items never received AI pre-fill because extraction ran after save, (2) extracted values silently overwrote user-typed data, (3) re-extraction required deleting and re-uploading. Decoupling fixes all three. SSE streaming and background job queues were rejected — 90% of the UX gain at 20% of the complexity for a single 2-5s receipt.
 
-1. **New-item pre-fill gap.** Creating an item deferred receipt upload until after save (`pendingFile` in React state), so AI extraction ran server-side *after* the modal closed. The user never saw extracted data populate the form — the core value of AI extraction (reducing manual data entry) was lost for the primary creation use case. With the decoupled pattern, the item is created immediately on receipt drop (as a draft with placeholder data), so upload + extract can run right away and populate the form in real-time.
+**Trade-off:** Three API calls instead of one. New items need a draft row first (see Decision 31).
 
-2. **Destructive pre-fill.** The old endpoint merged extracted fields directly into the item's DB row and returned the updated item. If the user had partially filled the form, extracted values silently overwrote their input. With the decoupled pattern, `extract` is read-only — it returns suggestions without persisting anything. The `apply` endpoint only writes fields the user explicitly accepts.
+### 29. Confidence-Based Auto-Accept Threshold
 
-3. **No re-extraction.** If extraction returned bad data, the only path was to delete the receipt and re-upload the same file. With the decoupled pattern, `POST /receipt/extract` is stateless and idempotent — call it as many times as needed. The frontend adds a "Re-extract" button visible after successful extraction.
+**What:** Extracted fields with confidence ≥ 0.8 auto-populate into form fields (yellow `ai-highlight`). Below 0.8, they appear as suggestion chips requiring explicit Accept. All highlights clear on user edit.
 
-**Trade-off:** Three API calls instead of one (and two for new items, since create + upload are chained sequentially). This adds latency on the critical path but makes each operation simpler, independently testable, and retryable. Two alternatives were considered and rejected:
+**Why:** Blindly auto-filling every field risks polluting the form — the user must clean it anyway, defeating the purpose. The threshold auto-fills high-confidence data while surfacing uncertain data for review. 0.8 is empirically reasonable; tunable via `EXTRACTION_AUTO_ACCEPT_THRESHOLD` env var.
 
-- **Streaming extraction (SSE):** Arguably a better UX for real-time progressive field population, but the infrastructure complexity (SSE connection management, load balancer timeouts, proxy compatibility, connection cleanup) is disproportionate for a single-receipt-at-a-time flow. The decoupled pattern achieves 90% of the UX gain (immediate pre-fill, per-field control, retry) with 20% of the implementation complexity. SSE could be added later by converting the `extract` endpoint without changing `upload` or `apply`.
+**Trade-off:** Heuristic, not a guarantee — high-confidence fields can still be wrong. Design optimizes for the common case (accurate extraction → zero extra clicks) while safeguarding the uncommon case (uncertain extraction → explicit accept).
 
-- **Background extraction (job queue):** The fastest perceived experience (upload returns instantly, extraction happens async), but it introduces a job queue (Redis + BullMQ or PgBoss), polling endpoints, and a worker process in Docker Compose. For a single receipt upload that completes in 2-5 seconds, the overhead isn't justified. This is the right pattern if the application scales to batch receipt uploads (10-20 receipts per report), which is a real user need but out of scope.
+### 30. Category Extraction via LLM
 
-### 31. Confidence-Based Auto-Accept Threshold
+**What:** LLM prompt includes category inference alongside merchant/amount/currency/date. Invalid category values default to `OTHER` server-side.
 
-**What:** Extracted fields with confidence ≥ 0.8 are auto-populated into form fields with a yellow `ai-highlight` class. Fields below 0.8 are shown as inline suggestion chips (amber `ai-highlight-low` on the input, or a `suggestion-chip-low` below it) that the user must explicitly accept via an "Accept" button. All highlights clear when the user edits the field.
+**Why:** Stitch mockup shows category with `ai-highlight` — designer expected AI to fill it. Withholding it creates friction when merchant context makes the category obvious.
 
-**Why:** Blindly auto-filling every extracted field (as the previous implementation did) risks polluting the form with low-quality data — the user must then inspect and clean every field anyway, which defeats the purpose. A confidence threshold lets the system auto-fill what it's sure about (reducing manual entry for the high-confidence case) while surfacing uncertain data for explicit review. The 0.8 threshold is empirically reasonable for `gpt-4o-mini` with receipt images; it can be tuned without code changes by making it an env var (`EXTRACTION_AUTO_ACCEPT_THRESHOLD`).
+**Trade-off:** Category extraction is inherently lower-confidence than merchant/amount (~0.5-0.7), so suggestions typically appear as Accept chips rather than auto-populated — correct behavior that surfaces the LLM's best guess without forcing it.
 
-**Trade-off:** The threshold is a heuristic, not a guarantee. A field with 0.85 confidence could still be wrong. The user still needs to review all highlighted fields — the threshold just reduces the number of clicks required for high-confidence extractions. An alternative was requiring explicit accept for *every* field regardless of confidence, but that adds 4-5 clicks for usually-correct data, which degrades the UX for the 90%+ case where extraction is accurate. The current design optimizes for the common case (accurate extraction → zero extra clicks) while safeguarding the uncommon case (uncertain extraction → explicit accept required).
+### 31. Draft Item for New-Item Receipt Flow
 
-### 32. Category Extraction via LLM
+**What:** User drops a receipt → frontend immediately creates a draft item via `POST` (placeholder values), gets a real item ID, then chains upload → extract → review. Cancel deletes the draft; save updates it in-place.
 
-**What:** The LLM prompt now includes category inference (`TRAVEL`, `MEALS`, `OFFICE_SUPPLIES`, `SOFTWARE`, `HARDWARE`, `MARKETING`, `OTHER`) alongside the existing merchant/amount/currency/date fields. Category values are validated against the Prisma enum on the backend — invalid values default to `OTHER`.
+**Why:** Previous approach stored the file in React state and uploaded after save — AI extraction ran after the modal closed, so the user never saw automatic field population (the core feature value). Creating the item first unlocks the full flow for new items, matching the edit-item experience, and eliminates the split code path.
 
-**Why:** The original Stitch design mockup shows the `category` field highlighted with `ai-highlight`, indicating the designer expected AI to fill it. Withholding category from extraction creates a friction point — the user must always select it manually even when the merchant name ("Marriott", "Starbucks") makes the category obvious. The LLM can infer category from merchant context with reasonable accuracy, and the confidence score signals when it's uncertain (which is often, since receipts don't explicitly state "this is a travel expense").
-
-**Trade-off:** Category extraction is inherently lower-confidence than merchant name or amount (the receipt rarely states its own category). Confidence scores will typically be 0.5-0.7, meaning category suggestions will usually appear as "Accept" chips rather than auto-populated fields. This is the correct behavior — it surfaces the LLM's best guess without forcing it on the user. An invalid category string from the LLM is caught server-side and defaults to `OTHER`, so no bad data can leak through. The alternative of not extracting category at all is simpler but ignores the clear design intent and leaves a manual step that AI can reasonably assist with.
-
-### 33. Draft Item for New-Item Receipt Flow
-
-**What:** When a user drops a receipt while creating a new expense item, the frontend immediately creates a "draft" item via `POST /api/reports/:reportId/items` with placeholder values (`merchantName: "New Expense"`, `amount: 0.01`, `category: OTHER`), gets back a real item ID, then chains upload → extract → review. If the user cancels (Discard), the draft item is deleted via `DELETE /api/reports/:reportId/items/:draftItemId`. If they save, the draft is updated in-place with the final form values.
-
-**Why:** The previous approach stored the file as `pendingFile` in React state and uploaded it after the item was saved. This meant AI extraction only ran after the form was submitted and the modal was closed — the user never experienced the core feature value (automatic field population from a receipt). Creating the item first (even with placeholder data) unlocks the full upload → extract → review flow for new items, matching the edit-item experience. This also simplifies the frontend state — there's no `pendingFile` variable, no deferred upload logic, and no split code path between new/edit items.
-
-**Trade-off:** Draft items are real database records that momentarily exist with placeholder data. If the user cancels, the draft is deleted, but there's a brief window where a `loadReport()` call could show a phantom item. This is mitigated by: (1) the draft has a distinctive `merchantName` ("New Expense") that makes it obviously a work-in-progress, (2) the delete happens synchronously before `onSaved` triggers a refresh, and (3) the phantom-item window is a cosmetic issue, not a data integrity issue — the report total is always recomputed on the next item mutation. The alternative (a separate `Receipt` table with its own lifecycle, decoupled from items) adds significantly more complexity (a new model, new routes, receipt-to-item linking logic) for a marginal improvement in avoiding the phantom-item window.
+**Trade-off:** Draft items briefly exist as DB records. A concurrent `loadReport()` shows a phantom item and inflates `totalAmount` by the draft's placeholder $0.01 — a transient data issue, not just cosmetic. A separate `Receipt` table was rejected as significantly more complexity for marginal improvement.
