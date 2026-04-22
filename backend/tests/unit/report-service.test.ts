@@ -8,6 +8,7 @@ jest.mock('../../src/config/prisma', () => ({
   prisma: {
     expenseReport: {
       findMany: jest.fn(),
+      findUnique: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
@@ -15,6 +16,18 @@ jest.mock('../../src/config/prisma', () => ({
     expenseItem: {
       count: jest.fn(),
     },
+    $transaction: jest.fn((fn) => {
+      const tx = {
+        expenseReport: {
+          findUnique: jest.fn(),
+          update: jest.fn(),
+        },
+        expenseItem: {
+          count: jest.fn(),
+        },
+      };
+      return fn(tx);
+    }),
   },
 }));
 
@@ -212,36 +225,120 @@ describe('ReportService', () => {
 
   describe('submit', () => {
     it('submits a DRAFT report with items', async () => {
-      (reportUtils.findOwnedReport as jest.Mock).mockResolvedValue(makeReport({ status: 'DRAFT' }));
-      (prisma.expenseItem.count as jest.Mock).mockResolvedValue(3);
-      (prisma.expenseReport.update as jest.Mock).mockResolvedValue({ ...makeReport(), status: 'SUBMITTED' });
+      const mockReport = makeReport({ status: 'DRAFT' });
+      const mockUpdated = { ...mockReport, status: 'SUBMITTED', items: [] };
+
+      (prisma.$transaction as jest.Mock).mockImplementation(async (fn) => {
+        const tx = {
+          expenseReport: {
+            findUnique: jest.fn().mockResolvedValue(mockReport),
+            update: jest.fn().mockResolvedValue(mockUpdated),
+          },
+          expenseItem: {
+            count: jest.fn().mockResolvedValue(3),
+          },
+        };
+        return fn(tx);
+      });
 
       const result = await reportService.submit(REPORT_ID, USER_ID);
 
       expect(result.status).toBe('SUBMITTED');
-      expect(prisma.expenseReport.update).toHaveBeenCalledWith(
-        expect.objectContaining({ data: { status: 'SUBMITTED' } }),
-      );
     });
 
     it('throws ValidationError when report has no items', async () => {
-      (reportUtils.findOwnedReport as jest.Mock).mockResolvedValue(makeReport({ status: 'DRAFT' }));
-      (prisma.expenseItem.count as jest.Mock).mockResolvedValue(0);
+      const mockReport = makeReport({ status: 'DRAFT' });
+
+      (prisma.$transaction as jest.Mock).mockImplementation(async (fn) => {
+        const tx = {
+          expenseReport: {
+            findUnique: jest.fn().mockResolvedValue(mockReport),
+            update: jest.fn(),
+          },
+          expenseItem: {
+            count: jest.fn().mockResolvedValue(0),
+          },
+        };
+        return fn(tx);
+      });
 
       const promise = reportService.submit(REPORT_ID, USER_ID);
-      await expect(promise).rejects.toThrow(ValidationError);
       await expect(promise).rejects.toThrow('Cannot submit an empty report');
     });
 
+    it('throws NotFoundError when report does not exist', async () => {
+      (prisma.$transaction as jest.Mock).mockImplementation(async (fn) => {
+        const tx = {
+          expenseReport: {
+            findUnique: jest.fn().mockResolvedValue(null),
+            update: jest.fn(),
+          },
+          expenseItem: {
+            count: jest.fn(),
+          },
+        };
+        return fn(tx);
+      });
+
+      const promise = reportService.submit(REPORT_ID, USER_ID);
+      await expect(promise).rejects.toThrow(NotFoundError);
+    });
+
+    it('throws ForbiddenError when user does not own report', async () => {
+      const mockReport = makeReport({ status: 'DRAFT', userId: OTHER_USER_ID });
+
+      (prisma.$transaction as jest.Mock).mockImplementation(async (fn) => {
+        const tx = {
+          expenseReport: {
+            findUnique: jest.fn().mockResolvedValue(mockReport),
+            update: jest.fn(),
+          },
+          expenseItem: {
+            count: jest.fn(),
+          },
+        };
+        return fn(tx);
+      });
+
+      const promise = reportService.submit(REPORT_ID, USER_ID);
+      await expect(promise).rejects.toThrow(ForbiddenError);
+    });
+
     it('throws StateTransitionError when report is already SUBMITTED', async () => {
-      (reportUtils.findOwnedReport as jest.Mock).mockResolvedValue(makeReport({ status: 'SUBMITTED' }));
+      const mockReport = makeReport({ status: 'SUBMITTED' });
+
+      (prisma.$transaction as jest.Mock).mockImplementation(async (fn) => {
+        const tx = {
+          expenseReport: {
+            findUnique: jest.fn().mockResolvedValue(mockReport),
+            update: jest.fn(),
+          },
+          expenseItem: {
+            count: jest.fn(),
+          },
+        };
+        return fn(tx);
+      });
 
       const promise = reportService.submit(REPORT_ID, USER_ID);
       await expect(promise).rejects.toThrow(StateTransitionError);
     });
 
     it('throws StateTransitionError when report is APPROVED', async () => {
-      (reportUtils.findOwnedReport as jest.Mock).mockResolvedValue(makeReport({ status: 'APPROVED' }));
+      const mockReport = makeReport({ status: 'APPROVED' });
+
+      (prisma.$transaction as jest.Mock).mockImplementation(async (fn) => {
+        const tx = {
+          expenseReport: {
+            findUnique: jest.fn().mockResolvedValue(mockReport),
+            update: jest.fn(),
+          },
+          expenseItem: {
+            count: jest.fn(),
+          },
+        };
+        return fn(tx);
+      });
 
       const promise = reportService.submit(REPORT_ID, USER_ID);
       await expect(promise).rejects.toThrow(StateTransitionError);

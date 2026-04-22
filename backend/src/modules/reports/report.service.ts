@@ -58,22 +58,34 @@ export async function remove(reportId: string, userId: string) {
 }
 
 export async function submit(reportId: string, userId: string) {
-  const report = await findOwnedReport(prisma, reportId, userId);
+  return prisma.$transaction(async (tx) => {
+    const report = await tx.expenseReport.findUnique({
+      where: { id: reportId },
+    });
 
-  const newStatus = transition(report.status, 'submit');
+    if (!report) {
+      throw new NotFoundError('Report');
+    }
 
-  const itemCount = await prisma.expenseItem.count({
-    where: { reportId },
-  });
+    if (report.userId !== userId) {
+      throw new ForbiddenError('You do not have access to this report');
+    }
 
-  if (itemCount === 0) {
-    throw new ValidationError('Cannot submit an empty report. Add at least one expense item.');
-  }
+    const newStatus = transition(report.status, 'submit');
 
-  return prisma.expenseReport.update({
-    where: { id: reportId },
-    data: { status: newStatus },
-    include: { items: true },
+    const itemCount = await tx.expenseItem.count({
+      where: { reportId },
+    });
+
+    if (itemCount === 0) {
+      throw new ValidationError('Cannot submit an empty report. Add at least one expense item.');
+    }
+
+    return tx.expenseReport.update({
+      where: { id: reportId },
+      data: { status: newStatus },
+      include: { items: true },
+    });
   });
 }
 
