@@ -1,7 +1,8 @@
 import OpenAI from 'openai';
 import fs from 'fs';
-import type { IExtractionService, ExtractedData, ExtractedField } from './extraction.interface';
+import type { IExtractionService, ExtractedData } from './extraction.interface';
 import { VALID_CATEGORIES, LlmResponseSchema } from './extraction.interface';
+import { ExtractionError } from '../../common/errors';
 
 const EXTRACTION_PROMPT = `You are a receipt data extraction assistant. Extract the following fields from this receipt image/document:
 - merchant_name: the business/store name
@@ -22,7 +23,7 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function parseField<T>(raw: unknown, validate?: (v: unknown) => v is T): ExtractedField<T> | undefined {
+function parseStringField(raw: unknown): { value: string; confidence: number } | undefined {
   if (!raw || typeof raw !== 'object') return undefined;
   const obj = raw as Record<string, unknown>;
   const value = obj.value;
@@ -30,9 +31,20 @@ function parseField<T>(raw: unknown, validate?: (v: unknown) => v is T): Extract
   if (typeof obj.confidence === 'number' && obj.confidence >= 0 && obj.confidence <= 1) {
     confidence = obj.confidence;
   }
-  if (value === undefined || value === null || value === '') return undefined;
-  if (validate && !validate(value)) return undefined;
-  return { value: value as T, confidence };
+  if (typeof value !== 'string' || value === '') return undefined;
+  return { value, confidence };
+}
+
+function parseNumberField(raw: unknown): { value: number; confidence: number } | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const obj = raw as Record<string, unknown>;
+  const value = obj.value;
+  let confidence: number = 0.5;
+  if (typeof obj.confidence === 'number' && obj.confidence >= 0 && obj.confidence <= 1) {
+    confidence = obj.confidence;
+  }
+  if (typeof value !== 'number') return undefined;
+  return { value, confidence };
 }
 
 export class OpenAIExtractionService implements IExtractionService {
@@ -92,46 +104,50 @@ export class OpenAIExtractionService implements IExtractionService {
     const content = response.choices[0]?.message?.content?.trim() ?? '';
     const jsonMatch = content.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      return {};
+      console.error('[Extraction] LLM response contained no JSON object');
+      throw new ExtractionError('AI model returned no extractable data. Please enter details manually.');
     }
 
+    let rawParsed: Record<string, unknown>;
     try {
-      const rawParsed = JSON.parse(jsonMatch[0]);
-      const validated = LlmResponseSchema.safeParse(rawParsed);
-      if (!validated.success) {
-        console.error('[Extraction] LLM response failed Zod validation:', validated.error.issues);
-        return {};
-      }
-      const parsed = validated.data;
-
-      const categoryValue = parsed.category?.value;
-      const normalizedCategory =
-        typeof categoryValue === 'string'
-          ? (VALID_CATEGORIES as readonly string[]).includes(categoryValue.toUpperCase())
-            ? categoryValue.toUpperCase()
-            : 'OTHER'
-          : undefined;
-
-      return {
-        merchantName: parseField<string>(parsed.merchant_name),
-        amount: parseField<number>(parsed.amount, (v): v is number => typeof v === 'number'),
-        currency: parseField<string>(parsed.currency, (v): v is string => typeof v === 'string' && v.length === 3),
-        transactionDate: parseField<string>(parsed.transaction_date),
-        ...(normalizedCategory
-          ? {
-              category: {
-                value: normalizedCategory,
-                confidence:
-                  typeof parsed.category?.confidence === 'number'
-                    ? Math.min(1, Math.max(0, parsed.category.confidence))
-                    : 0.5,
-              },
-            }
-          : {}),
-      };
-    } catch {
-      return {};
+      rawParsed = JSON.parse(jsonMatch[0]);
+    } catch (parseErr) {
+      console.error('[Extraction] Failed to parse LLM JSON response:', parseErr);
+      throw new ExtractionError('AI model returned malformed data. Please enter details manually.');
     }
+
+    const validated = LlmResponseSchema.safeParse(rawParsed);
+    if (!validated.success) {
+      console.error('[Extraction] LLM response failed Zod validation:', validated.error.issues);
+      throw new ExtractionError('AI model returned invalid data structure. Please enter details manually.');
+    }
+    const parsed = validated.data;
+
+    const categoryValue = parsed.category?.value;
+    const normalizedCategory =
+      typeof categoryValue === 'string'
+        ? (VALID_CATEGORIES as readonly string[]).includes(categoryValue.toUpperCase())
+          ? categoryValue.toUpperCase()
+          : 'OTHER'
+        : undefined;
+
+    return {
+      merchantName: parseStringField(parsed.merchant_name),
+      amount: parseNumberField(parsed.amount),
+      currency: parseStringField(parsed.currency),
+      transactionDate: parseStringField(parsed.transaction_date),
+      ...(normalizedCategory
+        ? {
+            category: {
+              value: normalizedCategory,
+              confidence:
+                typeof parsed.category?.confidence === 'number'
+                  ? Math.min(1, Math.max(0, parsed.category.confidence))
+                  : 0.5,
+            },
+          }
+        : {}),
+    };
   }
 
   private isRetryableError(err: unknown): boolean {

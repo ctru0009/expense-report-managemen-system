@@ -92,13 +92,13 @@ describe('ExtractionService', () => {
       expect(result.success).toBe(false);
     });
 
-    it('allows extra fields via passthrough', () => {
+    it('rejects extra fields (strict mode)', () => {
       const withExtra = {
         merchant_name: { value: 'Test', confidence: 0.9 },
-        unexpected_field: 'should be allowed',
+        unexpected_field: 'should be rejected',
       };
       const result = LlmResponseSchema.safeParse(withExtra);
-      expect(result.success).toBe(true);
+      expect(result.success).toBe(false);
     });
 
     it('rejects completely malformed response (not an object)', () => {

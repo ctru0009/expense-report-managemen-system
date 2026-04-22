@@ -1,13 +1,53 @@
 import path from 'path';
 import fs from 'fs';
 import { prisma } from '../../config/prisma';
-import { NotFoundError, StateTransitionError, ExtractionError } from '../../common/errors';
+import { NotFoundError, ForbiddenError, StateTransitionError, ExtractionError } from '../../common/errors';
 import { findOwnedReport } from '../reports/report.utils';
 import { canEditItems } from '../reports/report-state-machine';
 import { recomputeTotal } from '../items/item.utils';
 import { getExtractionService } from './extraction.factory';
 import type { ExtractedData, ExtractionResponse } from './extraction.interface';
 import { config } from '../../config/env';
+
+export async function getReceiptFilePath(
+  reportId: string,
+  itemId: string,
+  userId: string,
+  userRole: string,
+): Promise<string> {
+  const report = await prisma.expenseReport.findUnique({
+    where: { id: reportId },
+  });
+
+  if (!report) {
+    throw new NotFoundError('Report');
+  }
+
+  if (report.userId !== userId && userRole !== 'ADMIN') {
+    throw new ForbiddenError('You do not have access to this report');
+  }
+
+  const item = await prisma.expenseItem.findUnique({
+    where: { id: itemId },
+  });
+
+  if (!item || item.reportId !== reportId) {
+    throw new NotFoundError('Item');
+  }
+
+  if (!item.receiptUrl) {
+    throw new NotFoundError('Receipt');
+  }
+
+  const filename = item.receiptUrl.replace('/uploads/', '');
+  const filePath = path.join(config.uploadDir, filename);
+
+  if (!fs.existsSync(filePath)) {
+    throw new NotFoundError('Receipt file');
+  }
+
+  return filePath;
+}
 
 export async function uploadReceipt(
   reportId: string,
@@ -89,6 +129,7 @@ export async function extractReceipt(
       receiptUrl: item.receiptUrl,
     };
   } catch (err: unknown) {
+    if (err instanceof ExtractionError) throw err;
     const message = err instanceof Error ? err.message : 'Unknown extraction error';
     throw new ExtractionError(message);
   }

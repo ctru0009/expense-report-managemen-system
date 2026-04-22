@@ -32,15 +32,29 @@ export const VALID_CATEGORIES = [
   'OTHER',
 ] as const;
 
-const ExtractedFieldSchema = z.object({
-  value: z.unknown(),
+const ExtractedStringFieldSchema = z.object({
+  value: z.string().min(1),
+  confidence: z.number().min(0).max(1),
+});
+
+const ExtractedNumberFieldSchema = z.object({
+  value: z.number(),
   confidence: z.number().min(0).max(1),
 });
 
 export const LlmResponseSchema = z.object({
-  merchant_name: ExtractedFieldSchema.optional(),
-  amount: ExtractedFieldSchema.optional(),
-  currency: ExtractedFieldSchema.optional(),
-  transaction_date: ExtractedFieldSchema.optional(),
-  category: ExtractedFieldSchema.optional(),
-}).passthrough();
+  merchant_name: ExtractedStringFieldSchema.optional(),
+  amount: ExtractedNumberFieldSchema.optional(),
+  currency: z.object({
+    value: z.string().length(3),
+    confidence: z.number().min(0).max(1),
+  }).optional(),
+  transaction_date: z.object({
+    value: z.string().min(1),
+    confidence: z.number().min(0).max(1),
+  }).optional(),
+  category: z.object({
+    value: z.string(),
+    confidence: z.number().min(0).max(1),
+  }).optional(),
+}).strict();
