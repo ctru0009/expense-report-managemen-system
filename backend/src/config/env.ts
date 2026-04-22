@@ -9,6 +9,7 @@ export const config = {
   port: parseInt(process.env.PORT || '3001', 10),
   databaseUrl: process.env.DATABASE_URL!,
   uploadDir: process.env.UPLOAD_DIR || './uploads',
-  openaiApiKey: process.env.OPENAI_API_KEY || '',
-  openaiBaseUrl: process.env.OPENAI_BASE_URL || undefined,
+  llmApiKey: process.env.LLM_API_KEY || process.env.OPENAI_API_KEY || '',
+  llmBaseUrl: process.env.LLM_BASE_URL || process.env.OPENAI_BASE_URL || 'https://openrouter.ai/api/v1',
+  llmModel: process.env.LLM_MODEL || 'google/gemini-2.0-flash-001',
 };
