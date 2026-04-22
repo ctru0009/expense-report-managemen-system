@@ -7,11 +7,9 @@ A full-stack expense report management system with JWT auth, state-machine-drive
 ```bash
 # Start all services (Postgres, backend, frontend)
 docker-compose up --build
-
-# In a separate terminal, run migrations and seed data
-docker-compose exec backend npx prisma migrate deploy
-docker-compose exec backend npm run prisma:seed
 ```
+
+The Dockerfile CMD automatically runs database migrations and seeds on first boot. No manual steps required.
 
 The app will be available at:
 
@@ -55,10 +53,11 @@ The frontend proxies API requests to `http://localhost:3001` in development via 
 | Variable          | Default                                | Description                          |
 |-------------------|----------------------------------------|--------------------------------------|
 | `DATABASE_URL`    | `postgresql://expenseapp:...`          | PostgreSQL connection string         |
-| `JWT_SECRET`      | `dev-secret-change-in-production`      | JWT signing key                      |
+| `JWT_SECRET`      | `dev-secret-change-in-production`      | JWT signing key (**required in production**) |
 | `JWT_EXPIRES_IN`  | `7d`                                   | Token TTL                            |
-| `OPENAI_API_KEY`  | `sk-dummy`                             | OpenAI key; `dummy` = mock extractor |
-| `OPENAI_BASE_URL` | _(empty)_                              | OpenAI-compatible endpoint override  |
+| `LLM_API_KEY`     | _(empty)_                              | LLM API key; empty = mock extractor |
+| `LLM_BASE_URL`    | `https://openrouter.ai/api/v1`         | OpenAI-compatible endpoint override  |
+| `LLM_MODEL`       | `google/gemini-2.0-flash-001`          | LLM model to use                    |
 | `UPLOAD_DIR`      | `./uploads`                            | Local receipt storage path           |
 | `PORT`            | `3001`                                 | Backend port                         |
 
@@ -76,11 +75,9 @@ npm test               # all tests (unit + integration)
 npm run test:watch     # Jest in watch mode
 ```
 
-**Unit tests** cover the state machine transitions, service-layer business logic, and Zod validation schemas. **Integration tests** cover the key happy paths: full approval lifecycle, rejection/reopen cycle, item CRUD locking by report status, auth (401/403), and admin input validation.
+Unit tests cover the state machine transitions, service-layer business logic, and Zod validation schemas. Integration tests cover the key happy paths: full approval lifecycle, rejection/reopen cycle, item CRUD locking by report status, auth (401/403), and admin input validation.
 
 Integration tests require a running PostgreSQL database (the Docker Compose Postgres service works, or any local instance matching `DATABASE_URL`).
-
-> See `docs/architecture.md` for full testing strategy details.
 
 ## Architecture Overview
 
@@ -91,29 +88,105 @@ React SPA (Vite)  ──HTTP/REST──►  Express API  ──►  Prisma ORM  
                                        └── OpenAI API (receipt extraction)
 ```
 
-**Stack:** Node.js 20 + Express + TypeScript + Prisma + PostgreSQL (backend), React 18 + Vite + TypeScript + Tailwind CSS (frontend).
+Stack: Node.js 20 + Express + TypeScript + Prisma + PostgreSQL (backend), React 18 + Vite + TypeScript + Tailwind CSS (frontend).
 
-**Key patterns:**
+Key patterns:
 
 - **Layered backend:** Routes → Controller (thin) → Service (business logic + state machine) → Prisma (data). No business logic in controllers.
-- **State machine:** `DRAFT → SUBMITTED → APPROVED` (terminal). `REJECTED → DRAFT` via explicit reopen. Items locked when report is not in DRAFT/REJECTED.
+- **State machine:** `DRAFT → SUBMITTED → APPROVED` (terminal). `REJECTED → DRAFT` via explicit reopen. Items locked when report is not in DRAFT.
 - **Total amount:** Stored on `ExpenseReport.totalAmount`, recomputed in a Prisma transaction on every item change.
-- **AI extraction:** `IExtractionService` interface with OpenAI and mock implementations. Synchronous extraction on upload. `OPENAI_BASE_URL` supports any OpenAI-compatible endpoint.
+- **AI extraction:** `IExtractionService` interface with OpenAI and mock implementations. Synchronous extraction on upload. `LLM_BASE_URL` supports any OpenAI-compatible endpoint.
 - **Auth:** JWT with bcrypt. RBAC middleware typed to Prisma's `Role` enum.
 
-See `docs/architecture.md` for full details and `DECISIONS.md` for trade-off rationale.
+See `DECISIONS.md` for trade-off rationale.
 
-## AI Usage Note
+## AI Tools & Workflow
 
-<!-- TODO: Fill in with your actual experience. Suggested structure:
+This project was built under real constraints — a lot of hitting 5-hour usage limit on Z.ai Coding Plan — which forced deliberate decisions about which model handled which task. Rather than using a framework like (GetShitDone or Superpower) to orchestrate AI 
+agents, all planning and prompting was done manually. The upside: deeper mental ownership of the codebase and no token overhead from framework scaffolding.The downside: as the project grew, context had to be manually re-established across sessions, which contributed to some implementation inconsistencies that required extra debugging iterations.
 
-**Tools used:** [e.g., Claude Code (opencode CLI), Cursor, Stitch for design prototyping, etc.]
+**On timeline:** The original plan estimated 6-8 hours with parallel 
+git worktree agents running backend and frontend simultaneously. In 
+practice, Coding Plan rolling rate limit prevented spawning 
+more than one agent at a time — parallel execution would have doubled 
+the rate limit consumption and stalled both worktrees mid-implementation. 
+The decision was to run phases sequentially and use the rate limit 
+resets as deliberate review checkpoints: each completed phase was 
+reviewed by a separate "CTO scan" agent before moving forward. This 
+added time but caught security and architecture issues earlier rather 
+than compounding them across phases.
 
-**How they helped:** [e.g., Scaffolding project structure, generating state machine logic, converting Stitch HTML exports to JSX components, writing unit tests, etc.]
+**Model routing by task type:**
 
-**Where I overrode or corrected output:** [e.g., Stitch mockup included a role selector on signup that contradicted security requirements — removed it. AI suggested real-time data sync (polling/WebSockets) which was deferred as out of scope for a demo. Pushed back on async receipt extraction in favor of synchronous approach for simplicity. Corrected AI-generated code that placed business logic in controllers by moving it to the service layer, etc.]
+- **GLM 5.1** — high-level planning, architecture exploration, generating 
+  3 viable approaches to key decisions before committing. Token-expensive 
+  but strong at long-horizon reasoning, state machine design, Zod validation 
+  strategy, AI extraction prompt engineering, code review, and 
+  DECISIONS.md reasoning. Reserved for judgment-heavy tasks..
+- **GLM 4.7** — implementation counterpart to 5.1. Once architecture was 
+  decided, 4.7 executed the build at lower cost.
+- **GPT-5.4-mini / GitHub Copilot** — mechanical tasks when Claude was 
+  rate-limited: commit scaffolding, boilerplate, CRUD stubs. No business 
+  logic delegated here.
 
--->
+**Tooling setup:** Claude Code + OpenCode + VS Code with LSP enabled on 
+both agents. LSP (Language Server Protocol) integration means agents 
+validate edits in real-time and traverse code by following function 
+definitions rather than grep — this meaningfully reduces hallucinated 
+imports and invalid refactors without requiring manual reprompting.
+
+**MCP used:** Playwright MCP for final end-to-end testing and README 
+screenshot capture.
+
+**Where I overrode AI output:**
+
+- **REJECTED → DRAFT as explicit action, not implicit flip.** Claude 
+  suggested auto-transitioning a report back to DRAFT silently when a 
+  user edited it. Overrode to require an explicit "Reopen to Draft" 
+  button — silent state changes are invisible in audit trails and 
+  confusing for users who don't realize their rejected report changed 
+  status.
+
+- **Item edits require DRAFT, not just non-SUBMITTED.** Related to 
+  above — Claude's initial canEditItems allowed edits in REJECTED status 
+  directly. Overrode to DRAFT-only. If you want to edit items, you 
+  reopen first. The state machine is explicit and traceable.
+
+- **Multi-currency: store the field, skip the conversion.** Claude 
+  suggested implementing full multi-currency conversion with an exchange 
+  rate service. Overrode — conversion adds an external dependency and 
+  meaningful complexity for a demo. The currency field is stored per-item 
+  for future extension, but totals are summed as-is. Documented in 
+  DECISIONS.md as a known limitation.
+
+- **Fixed category enum, no free-text "other".** Claude suggested a 
+  free-text category field to handle edge cases. Overrode to a fixed 
+  Prisma enum with an OTHER catch-all. Free-text categories accumulate 
+  inconsistent data over time ("travel", "Travel", "Travel expense") 
+  — enums are filterable and consistent. If new categories emerge 
+  organically, they get added as enum values with a migration.
+
+- **Block empty report submission.** Not in the original spec. Added 
+  server-side validation rejecting submissions with zero items — 
+  an empty expense report has no business value and creates noise 
+  for admins. Business logic enforcement belongs in the service layer 
+  regardless of whether the spec calls it out explicitly.
+
+- **Multi-provider LLM support via OpenRouter, not OpenAI-only.** 
+  Claude scaffolded the extraction service hardcoded to OpenAI. 
+  Overrode to an abstract IExtractionService interface with 
+  configurable LLM_BASE_URL and LLM_MODEL env vars. Default routes 
+  through OpenRouter to Gemini Flash — cheaper, faster, and equally 
+  capable for receipt extraction. Any OpenAI-compatible endpoint works 
+  with zero code changes.
+
+**AI artifacts committed to this repo:**
+- `.claude/` — Claude Code project settings and commands
+- `CLAUDE.md` — project context file used across Claude sessions
+- `docs/plan.md` — AI-assisted planning breakdown
+- `docs/architecture.md` — AI-assisted architecture notes
+- `DECISIONS.md` — all decisions documented in real-time during 
+  development, including where AI output was overridden
 
 ## Project Structure
 
