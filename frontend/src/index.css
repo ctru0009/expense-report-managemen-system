@@ -15,3 +15,30 @@ body {
   background-color: #ffffff;
   border-bottom: 2px solid #00429d;
 }
+
+.ai-highlight-low {
+  background-color: #fff8e1;
+  border-bottom: 2px solid #ffb300;
+}
+
+.ai-highlight-low:focus {
+  background-color: #ffffff;
+  border-bottom: 2px solid #00429d;
+}
+
+.suggestion-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #e3f2fd;
+  border: 1px solid #90caf9;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.suggestion-chip-low {
+  background-color: #fff3e0;
+  border-color: #ffb74d;
+}

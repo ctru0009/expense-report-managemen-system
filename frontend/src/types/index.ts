@@ -58,16 +58,35 @@ export interface CreateItemRequest {
 
 export interface UpdateItemRequest extends Partial<CreateItemRequest> {}
 
+export interface ExtractedField<T> {
+  value: T;
+  confidence: number;
+}
+
 export interface ExtractedData {
+  merchantName?: ExtractedField<string>;
+  amount?: ExtractedField<number>;
+  currency?: ExtractedField<string>;
+  category?: ExtractedField<string>;
+  transactionDate?: ExtractedField<string>;
+}
+
+export interface UploadReceiptResponse {
+  receiptUrl: string;
+  itemId: string;
+}
+
+export interface ExtractionResponse {
+  extracted: ExtractedData;
+  receiptUrl: string;
+}
+
+export interface ApplyExtractionRequest {
   merchantName?: string;
   amount?: number;
   currency?: string;
+  category?: Category;
   transactionDate?: string;
-}
-
-export interface ReceiptUploadResponse {
-  item: ExpenseItem;
-  extracted: ExtractedData;
 }
 
 export interface AdminExpenseReport extends ExpenseReport {
