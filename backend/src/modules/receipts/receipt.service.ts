@@ -1,18 +1,20 @@
 import path from 'path';
+import fs from 'fs';
 import { prisma } from '../../config/prisma';
-import { NotFoundError, StateTransitionError } from '../../common/errors';
+import { NotFoundError, StateTransitionError, ExtractionError } from '../../common/errors';
 import { findOwnedReport } from '../reports/report.utils';
 import { canEditItems } from '../reports/report-state-machine';
 import { recomputeTotal } from '../items/item.utils';
 import { getExtractionService } from './extraction.factory';
-import type { ExtractedData } from './extraction.interface';
+import type { ExtractedData, ExtractionResponse } from './extraction.interface';
+import { config } from '../../config/env';
 
 export async function uploadReceipt(
   reportId: string,
   itemId: string,
   userId: string,
   file: Express.Multer.File,
-): Promise<{ item: Record<string, unknown>; extracted: ExtractedData }> {
+): Promise<{ receiptUrl: string; itemId: string }> {
   const report = await findOwnedReport(prisma, reportId, userId);
 
   if (!canEditItems(report.status)) {
@@ -30,35 +32,118 @@ export async function uploadReceipt(
   const relativePath = path.basename(file.path);
   const receiptUrl = `/uploads/${relativePath}`;
 
-  const extractionService = getExtractionService();
-  let extracted: ExtractedData = {};
+  await prisma.expenseItem.update({
+    where: { id: itemId },
+    data: { receiptUrl },
+  });
 
-  try {
-    extracted = await extractionService.extract(file.path, file.mimetype);
-  } catch (err) {
-    console.error('Receipt extraction failed:', err);
+  return { receiptUrl, itemId };
+}
+
+export async function extractReceipt(
+  reportId: string,
+  itemId: string,
+  userId: string,
+): Promise<ExtractionResponse> {
+  const report = await findOwnedReport(prisma, reportId, userId);
+
+  if (!canEditItems(report.status)) {
+    throw new StateTransitionError('Cannot extract from a report in this status');
   }
 
-  const itemUpdateData: Record<string, unknown> = { receiptUrl };
+  const item = await prisma.expenseItem.findUnique({
+    where: { id: itemId },
+  });
 
-  if (extracted.merchantName) itemUpdateData.merchantName = extracted.merchantName;
-  if (extracted.amount !== undefined) itemUpdateData.amount = extracted.amount;
-  if (extracted.currency) itemUpdateData.currency = extracted.currency;
-  if (extracted.transactionDate) itemUpdateData.transactionDate = new Date(extracted.transactionDate);
+  if (!item || item.reportId !== reportId) {
+    throw new NotFoundError('Item');
+  }
+
+  if (!item.receiptUrl) {
+    throw new NotFoundError('Receipt');
+  }
+
+  const filename = item.receiptUrl.replace('/uploads/', '');
+  const filePath = path.join(config.uploadDir, filename);
+
+  if (!fs.existsSync(filePath)) {
+    throw new NotFoundError('Receipt file');
+  }
+
+  const ext = path.extname(filePath).toLowerCase();
+  const mimeMap: Record<string, string> = {
+    '.pdf': 'application/pdf',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.webp': 'image/webp',
+  };
+  const mimeType = mimeMap[ext] || 'application/octet-stream';
+
+  const extractionService = getExtractionService();
+
+  try {
+    const extracted = await extractionService.extract(filePath, mimeType);
+    return {
+      extracted,
+      receiptUrl: item.receiptUrl,
+    };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown extraction error';
+    throw new ExtractionError(message);
+  }
+}
+
+export async function applyExtraction(
+  reportId: string,
+  itemId: string,
+  userId: string,
+  acceptedFields: {
+    merchantName?: string;
+    amount?: number;
+    currency?: string;
+    category?: string;
+    transactionDate?: string;
+  },
+): Promise<Record<string, unknown>> {
+  const report = await findOwnedReport(prisma, reportId, userId);
+
+  if (!canEditItems(report.status)) {
+    throw new StateTransitionError('Cannot modify items in a report in this status');
+  }
+
+  const item = await prisma.expenseItem.findUnique({
+    where: { id: itemId },
+  });
+
+  if (!item || item.reportId !== reportId) {
+    throw new NotFoundError('Item');
+  }
+
+  const updateData: Record<string, unknown> = {};
+
+  if (acceptedFields.merchantName) updateData.merchantName = acceptedFields.merchantName;
+  if (acceptedFields.amount !== undefined) updateData.amount = acceptedFields.amount;
+  if (acceptedFields.currency) updateData.currency = acceptedFields.currency;
+  if (acceptedFields.category) updateData.category = acceptedFields.category;
+  if (acceptedFields.transactionDate) {
+    updateData.transactionDate = new Date(acceptedFields.transactionDate);
+  }
+
+  if (Object.keys(updateData).length === 0) {
+    return item as unknown as Record<string, unknown>;
+  }
 
   const updatedItem = await prisma.$transaction(async (tx) => {
     const updated = await tx.expenseItem.update({
       where: { id: itemId },
-      data: itemUpdateData,
+      data: updateData,
     });
     await recomputeTotal(reportId, tx);
     return updated;
   });
 
-  return {
-    item: updatedItem as unknown as Record<string, unknown>,
-    extracted,
-  };
+  return updatedItem as unknown as Record<string, unknown>;
 }
 
 export async function deleteReceipt(
@@ -78,6 +163,18 @@ export async function deleteReceipt(
 
   if (!item || item.reportId !== reportId) {
     throw new NotFoundError('Item');
+  }
+
+  if (item.receiptUrl) {
+    const filename = item.receiptUrl.replace('/uploads/', '');
+    const filePath = path.join(config.uploadDir, filename);
+    try {
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    } catch {
+      // non-fatal — file cleanup failure should not block the operation
+    }
   }
 
   const updatedItem = await prisma.expenseItem.update({
