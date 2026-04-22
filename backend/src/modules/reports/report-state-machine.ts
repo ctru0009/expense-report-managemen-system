@@ -29,7 +29,7 @@ export function transition(current: ReportStatus, action: string): ReportStatus 
 }
 
 export function canEditItems(status: ReportStatus): boolean {
-  return status === 'DRAFT' || status === 'REJECTED';
+  return status === 'DRAFT';
 }
 
 export function canEditMetadata(status: ReportStatus): boolean {

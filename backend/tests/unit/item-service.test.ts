@@ -34,8 +34,8 @@ const ITEM_DATA = {
   transactionDate: new Date(),
 };
 
-const STATUSES_ALLOWING_EDITS: ReportStatus[] = ['DRAFT', 'REJECTED'];
-const STATUSES_BLOCKING_EDITS: ReportStatus[] = ['SUBMITTED', 'APPROVED'];
+const STATUSES_ALLOWING_EDITS: ReportStatus[] = ['DRAFT'];
+const STATUSES_BLOCKING_EDITS: ReportStatus[] = ['SUBMITTED', 'APPROVED', 'REJECTED'];
 
 describe('ItemService', () => {
   beforeEach(() => {

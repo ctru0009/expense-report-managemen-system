@@ -220,6 +220,95 @@ describe('Item CRUD locked in SUBMITTED/APPROVED status', () => {
   });
 });
 
+describe('Item CRUD locked in REJECTED status (reopen required)', () => {
+  let reportId: string;
+
+  beforeAll(async () => {
+    const createRes = await request(app)
+      .post('/api/reports')
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({ title: 'Rejected Lock Report' });
+    reportId = createRes.body.id;
+
+    await request(app)
+      .post(`/api/reports/${reportId}/items`)
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({
+        merchantName: 'Rejected Item',
+        amount: 20,
+        currency: 'USD',
+        category: 'TRAVEL',
+        transactionDate: new Date().toISOString(),
+      });
+
+    await request(app)
+      .post(`/api/reports/${reportId}/submit`)
+      .set('Authorization', `Bearer ${userToken}`);
+
+    await request(app)
+      .post(`/api/admin/reports/${reportId}/reject`)
+      .set('Authorization', `Bearer ${adminToken}`);
+  });
+
+  it('returns 400 when creating item on REJECTED report', async () => {
+    const res = await request(app)
+      .post(`/api/reports/${reportId}/items`)
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({
+        merchantName: 'Should Fail',
+        amount: 1,
+        currency: 'USD',
+        category: 'OTHER',
+        transactionDate: new Date().toISOString(),
+      });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('INVALID_STATE_TRANSITION');
+  });
+
+  it('returns 400 when updating item on REJECTED report', async () => {
+    const itemsRes = await request(app)
+      .get(`/api/reports/${reportId}`)
+      .set('Authorization', `Bearer ${userToken}`);
+    const itemId = itemsRes.body.items[0].id;
+
+    const res = await request(app)
+      .put(`/api/reports/${reportId}/items/${itemId}`)
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({ merchantName: 'Should Fail' });
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 400 when deleting item on REJECTED report', async () => {
+    const itemsRes = await request(app)
+      .get(`/api/reports/${reportId}`)
+      .set('Authorization', `Bearer ${userToken}`);
+    const itemId = itemsRes.body.items[0].id;
+
+    const res = await request(app)
+      .delete(`/api/reports/${reportId}/items/${itemId}`)
+      .set('Authorization', `Bearer ${userToken}`);
+    expect(res.status).toBe(400);
+  });
+
+  it('allows item creation after REOPEN to DRAFT', async () => {
+    await request(app)
+      .post(`/api/reports/${reportId}/reopen`)
+      .set('Authorization', `Bearer ${userToken}`);
+
+    const res = await request(app)
+      .post(`/api/reports/${reportId}/items`)
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({
+        merchantName: 'After Reopen',
+        amount: 10,
+        currency: 'USD',
+        category: 'MEALS',
+        transactionDate: new Date().toISOString(),
+      });
+    expect(res.status).toBe(201);
+  });
+});
+
 describe('Admin routes: param validation', () => {
   it('returns 400 for invalid UUID in admin get', async () => {
     const res = await request(app)

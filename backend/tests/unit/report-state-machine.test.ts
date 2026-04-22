@@ -118,8 +118,8 @@ describe('ReportStateMachine', () => {
       expect(canEditItems('APPROVED')).toBe(false);
     });
 
-    it('returns true for REJECTED', () => {
-      expect(canEditItems('REJECTED')).toBe(true);
+    it('returns false for REJECTED', () => {
+      expect(canEditItems('REJECTED')).toBe(false);
     });
   });
 
